@@ -3,6 +3,8 @@
  * Este URL deve coincidir com o @ApplicationPath definido no Java.
  */
 const BASE_URL = "http://localhost:8080/LuisF-proj5/rest";
+const WS_BASE_URL = "ws://localhost:8080/LuisF-proj5/websocket/chat";
+
 
 /**
  * FUNÇÃO: apiRequest (INTERCEPTOR PADRÃO)
