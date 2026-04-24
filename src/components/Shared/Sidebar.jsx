@@ -27,6 +27,7 @@ const Sidebar = ({ isOpen }) => {
     { to: "/leads", icon: "bi-clipboard2-plus", label: "Leads" },
     { to: "/clients", icon: "bi-people", label: "Clientes" },
     { to: "/users", icon: "bi-gear", label: "Utilizadores", adminOnly: true },
+    { to: "/chat", icon: "bi-chat-dots", label: "Chat" }
   ];
 
   /** * FILTRAGEM DE SEGURANÇA (REGRA DE NEGÓCIO):

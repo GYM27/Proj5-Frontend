@@ -14,18 +14,36 @@ export const useLeadStore = create((set, get) => ({
   error: null,
   viewingUserName: "",
 
-  /** * PROCESSAMENTO DE DADOS (DATA TRANSFORMATION - 5%):
-   * Esta função atua como um "Adapter".
-   * - Converte 'state' de String para Integer (essencial para o filtro das colunas).
-   * - Formata a data ISO do Java para o padrão PT-PT (dd/mm/aaaa).
+  /** * PROCESSAMENTO DE DADOS (DATA TRANSFORMATION):
+   * Implementação defensiva para garantir o parsing da data, 
+   * quer o Java envie um Array [Ano, Mês, Dia] ou uma String ISO.
    */
-  _processLeads: (data) => data.map((lead) => ({
-    ...lead,
-    state: lead.state ? parseInt(lead.state, 10) : 1,
-    formattedDate: lead.date
-        ? new Date(lead.date.split(".")[0]).toLocaleDateString("pt-PT")
-        : "Sem data",
-  })),
+  _processLeads: (data) => data.map((lead) => {
+    let finalDate = "Sem data";
+
+    if (lead.date) {
+      // Cenário 1: O Java ignorou a formatação e enviou o Array numérico
+      if (Array.isArray(lead.date)) {
+        const [year, month, day] = lead.date;
+        // Os meses no JavaScript começam no zero (0 = Janeiro), logo subtraímos 1
+        finalDate = new Date(year, month - 1, day).toLocaleDateString("pt-PT");
+      } 
+      // Cenário 2: O Java enviou a String ISO corretamente
+      else {
+        const tempDate = new Date(lead.date);
+        // Verifica se o JavaScript conseguiu ler a data antes de a formatar
+        if (!isNaN(tempDate)) {
+          finalDate = tempDate.toLocaleDateString("pt-PT");
+        }
+      }
+    }
+
+    return {
+      ...lead,
+      state: lead.state ? parseInt(lead.state, 10) : 1,
+      formattedDate: finalDate
+    };
+  }),
 
   /** * ACÇÃO: fetchMyLeads
    * Procura as leads na API e aplica a transformação de dados antes de guardar no estado.
@@ -38,21 +56,25 @@ export const useLeadStore = create((set, get) => ({
       set({
         leads: processed,
         loading: false,
-        viewingUserName: processed.length > 0 ? processed[0].name : ""
+        viewingUserName: processed.length > 0 ? processed[0].name : "",
       });
     } catch (err) {
       set({ error: err.message, loading: false });
     }
   },
 
-  /** * GESTÃO DE CICLO DE VIDA (CRUD - 5%):
+  /** * GESTÃO DE CICLO DE VIDA:
    * Adiciona e edita leads, atualizando o estado local imediatamente (Optimistic UI)
    * para uma experiência de utilizador mais fluida.
    */
   addLead: async (leadDto, userRole, targetUserId = null) => {
     set({ loading: true, error: null });
     try {
-      const newLead = await leadService.createLead(leadDto, userRole, targetUserId);
+      const newLead = await leadService.createLead(
+        leadDto,
+        userRole,
+        targetUserId,
+      );
       const processed = get()._processLeads([newLead])[0];
 
       set((state) => ({
@@ -83,11 +105,11 @@ export const useLeadStore = create((set, get) => ({
     }
   },
 
-  /** * SEGURANÇA E LIXEIRA (REGRAS A9 e A14): */
+  /** * SEGURANÇA E LIXEIRA */
 
   deleteLead: async (id, userRole, permanent = false) => {
     // PROTEÇÃO ADICIONAL: Garante que o Hard Delete só é tentado se o Role for ADMIN.
-    const isActuallyPermanent = (userRole === "ADMIN") && permanent;
+    const isActuallyPermanent = userRole === "ADMIN" && permanent;
 
     try {
       await leadService.deleteLead(id, userRole, isActuallyPermanent);
@@ -104,9 +126,18 @@ export const useLeadStore = create((set, get) => ({
   restoreLead: async (id, leadData) => {
     set({ loading: true });
     try {
-      // Inverte o bit de softDelete utilizando o endpoint de atualização administrativa.
-      const updatedData = { ...leadData, softDelete: false };
-      await leadService.updateLead(id, updatedData, "ADMIN");
+      // 1. Criamos um payload "limpo", enviando APENAS o que o LeadDTO do Java conhece
+      // Ignoramos campos visuais como o 'formattedDate'
+      const cleanPayload = {
+        id: leadData.id,
+        title: leadData.title,
+        description: leadData.description,
+        state: leadData.state,
+        softDeleted: false, // Corrigido para coincidir exatamente com o backend
+      };
+
+      // 2. Enviamos o pacote limpo para a API
+      await leadService.updateLead(id, cleanPayload, "ADMIN");
 
       set((state) => ({
         leads: state.leads.filter((l) => l.id !== id),
@@ -122,7 +153,12 @@ export const useLeadStore = create((set, get) => ({
   /** * ACÇÕES EM MASSA (BULK OPERATIONS):
    * Orquestra a limpeza ou restauro de grandes volumes de leads para um utilizador.
    */
-  handleBulkAction: async (userId, actionType, currentUserRole, currentFilters) => {
+  handleBulkAction: async (
+    userId,
+    actionType,
+    currentUserRole,
+    currentFilters,
+  ) => {
     if (!userId) return false;
     set({ loading: true });
     try {
@@ -144,7 +180,7 @@ export const useLeadStore = create((set, get) => ({
       // uma nova leitura da base de dados para garantir integridade total.
       await get().fetchMyLeads(currentUserRole, currentFilters);
 
-      set({loading: false });
+      set({ loading: false });
       return true;
     } catch (err) {
       set({ error: err.message, loading: false });

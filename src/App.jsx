@@ -12,6 +12,7 @@ import LeadsKanban from "./pages/LeadsKanban";
 import Users from "./pages/Users";
 import Profile from "./pages/Profile";
 import NewClient from "./components/Clients/NewClient";
+import ChatPage from './components/Chat/ChatPage';
 
 function App() {
   const isDevelopment = import.meta.env.DEV;
@@ -36,6 +37,7 @@ function App() {
           <Route path="/users/:username" element={<Profile />} />
           <Route path="/clients" element={<Clients />} />
           <Route path="/clients/new" element={<NewClient />} />
+          <Route path="/chat" element={<ChatPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

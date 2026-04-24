@@ -3,7 +3,7 @@
  * Este URL deve coincidir com o @ApplicationPath definido no Java.
  */
 const BASE_URL = "http://localhost:8080/LuisF-proj5/rest";
-const WS_BASE_URL = "ws://localhost:8080/LuisF-proj5/websocket/chat";
+export const WS_BASE_URL = "ws://localhost:8080/LuisF-proj5/websocket/chat";
 
 
 /**
@@ -17,7 +17,7 @@ const WS_BASE_URL = "ws://localhost:8080/LuisF-proj5/websocket/chat";
  * @param {Object} body - Dados a serem enviados no corpo do pedido.
  */
 const apiRequest = async (endpoint, method = "GET", body = null) => {
-  // 1. GESTÃO DE SESSÃO (SEGURANÇA - 2%):
+  // 1. GESTÃO DE SESSÃO :
   // Recupera o JWT Token do sessionStorage. Se o utilizador não estiver logado,
   // o token será 'null' e o Backend barrará o acesso via UserVerificationBean.
   const token = sessionStorage.getItem("token");
@@ -68,18 +68,14 @@ const apiRequest = async (endpoint, method = "GET", body = null) => {
       return true;
     }
 
-    // 9. DESSERIALIZAÇÃO (JSON -> JS OBJECT):
-    // Transforma a resposta do servidor em objetos consumíveis pelo React/Zustand.
-    return await response.json();
+   // 9. DESSERIALIZAÇÃO SEGURA :
+    const text = await response.text();
+    return text ? JSON.parse(text) : null;
+
   } catch (error) {
-    // 10. TRATAMENTO DE ERROS DE CONECTIVIDADE:
-    // Captura cenários onde o servidor Java está offline ou há falha de rede.
     if (error.message === "Failed to fetch") {
-      throw new Error(
-        "Conexão recusada. Verifique se o servidor Wildfly está ativo.",
-      );
+      throw new Error("Conexão recusada. Verifique se o servidor Wildfly está ativo.");
     }
-    // Re-lança o erro para ser capturado pela UI (ex: Alerts no Login ou Modais).
     throw error;
   }
 };

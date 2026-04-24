@@ -100,6 +100,34 @@ const ConfirmActionContent = ({ type, data, onCancel, onConfirm }) => {
                 };
             };
 
+            case "USER_INVITE":
+                return (
+                    <div className="p-3">
+                        <p className="text-muted mb-4">
+                            Insira o endereço de e-mail do novo colaborador. Ele receberá um link único para concluir o registo.
+                        </p>
+                        <div className="form-group">
+                            <label className="form-label fw-bold">Endereço de E-mail</label>
+                            <input
+                                type="email"
+                                className="form-control"
+                                placeholder="exemplo@empresa.com"
+                                id="inviteEmail" // Usaremos o ID ou um estado local para capturar o valor
+                                required
+                            />
+                        </div>
+                        <div className="d-flex justify-content-end mt-4 gap-2">
+                            <button className="btn btn-light" onClick={onCancel}>Cancelar</button>
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => onConfirm({ email: document.getElementById('inviteEmail').value })}
+                            >
+                                Enviar Convite
+                            </button>
+                        </div>
+                    </div>
+                );
+
             default:
                 return {
                     icon: "bi-question-circle",
