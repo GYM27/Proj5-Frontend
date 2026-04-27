@@ -55,7 +55,10 @@ export const useWebSocket = () => {
         // Cleanup: Garante que a ligação fecha ao fazer logout ou mudar de página
         return () => {
             if (websocket.current) {
-                websocket.current.close();
+                // Só fecha se estiver aberto ou a abrir para evitar erros de consola no StrictMode
+                if (websocket.current.readyState === WebSocket.OPEN || websocket.current.readyState === WebSocket.CONNECTING) {
+                    websocket.current.close();
+                }
             }
         };
     }, [isAuthenticated, addMessage, incrementUnread]);

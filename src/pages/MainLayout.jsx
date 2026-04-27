@@ -7,6 +7,7 @@ import Footer from "../components/Shared/Footer.jsx";
 import useIdleTimeout from "../components/Shared/useIdleTimeout";
 import { useWebSocket } from "../components/Chat/useWebSocket";
 import { useHeaderStore } from "../stores/HeaderStore"; // Ponte para o cabeçalho
+import api from "../services/api";
 import GenericHeader from "../components/Shared/GenericHeader";
 
 const MainLayout = () => {
@@ -16,13 +17,29 @@ const MainLayout = () => {
   // Timeout de sessão de 15 minutos (900 segundos)
   useIdleTimeout(15);
 
-  // 1. SINCRONIZAÇÃO COM A STORE (REATIVIDADE):
-  // Ao extrairmos o 'isAuthenticated', o MainLayout vai "ouvir" a Store.
-  // Mal o handleLogout fizer 'clearUser()', este componente re-renderiza e expulsa o user.
+  // 1. SINCRONIZAÇÃO SELETIVA COM A STORE (OTIMIZAÇÃO):
+  // Usamos seletores para que o MainLayout NÃO re-renderize quando a lista de mensagens muda.
   const isAuthenticated = useUserStore((state) => state.isAuthenticated);
+  const setUnreadCount = useUserStore((state) => state.setUnreadCount);
   
   // 2. CONEXÃO COM O CABEÇALHO UNIFICADO:
   const { title, subtitle, stats, showStats } = useHeaderStore();
+
+  // 3. FETCH GLOBAL DE NOTIFICAÇÕES:
+  // Isto garante que o sininho fica a vermelho mal abrimos a app
+  useEffect(() => {
+    const fetchUnread = async () => {
+      if (!isAuthenticated) return;
+      try {
+        const count = await api("/notifications/unread-count");
+        setUnreadCount(count);
+      } catch (err) {
+        console.error("Erro ao carregar notificações iniciais:", err);
+      }
+    };
+
+    fetchUnread();
+  }, [isAuthenticated, setUnreadCount]);
 
   // 2. CORREÇÃO DE STORAGE:
   // coincidir com o teu apiRequest.js

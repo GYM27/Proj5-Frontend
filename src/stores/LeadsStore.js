@@ -14,26 +14,30 @@ export const useLeadStore = create((set, get) => ({
   error: null,
   viewingUserName: "",
 
-  /** * PROCESSAMENTO DE DADOS (DATA TRANSFORMATION):
-   * Implementação defensiva para garantir o parsing da data, 
-   * quer o Java envie um Array [Ano, Mês, Dia] ou uma String ISO.
-   */
   _processLeads: (data) => data.map((lead) => {
     let finalDate = "Sem data";
 
     if (lead.date) {
-      // Cenário 1: O Java ignorou a formatação e enviou o Array numérico
+      let tempDate;
       if (Array.isArray(lead.date)) {
         const [year, month, day] = lead.date;
-        // Os meses no JavaScript começam no zero (0 = Janeiro), logo subtraímos 1
-        finalDate = new Date(year, month - 1, day).toLocaleDateString("pt-PT");
-      } 
-      // Cenário 2: O Java enviou a String ISO corretamente
-      else {
-        const tempDate = new Date(lead.date);
-        // Verifica se o JavaScript conseguiu ler a data antes de a formatar
-        if (!isNaN(tempDate)) {
-          finalDate = tempDate.toLocaleDateString("pt-PT");
+        tempDate = new Date(year, month - 1, day);
+      } else {
+        tempDate = new Date(lead.date);
+      }
+
+      if (!isNaN(tempDate.getTime())) {
+        const today = new Date();
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        if (tempDate.toDateString() === today.toDateString()) {
+          finalDate = "Hoje";
+        } else if (tempDate.toDateString() === yesterday.toDateString()) {
+          finalDate = "Ontem";
+        } else {
+          // PADRÃO ISO8601 (YYYY-MM-DD)
+          finalDate = tempDate.toISOString().split('T')[0];
         }
       }
     }

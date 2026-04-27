@@ -22,18 +22,13 @@ const KanbanColumn = ({
                         cardActions
                       }) => {
 
-  // --- CONFIGURAÇÃO DE ESTILOS (CRITÉRIO: EVITAR MAGIC CONSTANTS) ---
-  const COLUMN_STYLE = {
-    minWidth: "280px",
-    borderTop: `5px solid ${isTrashMode ? "#dc3545" : col.color}`
-  };
   const TITLE_STYLE = { fontSize: "0.85rem", color: "#555" };
   const BADGE_STYLE = { fontSize: "0.7rem" };
 
   return (
       <div
           className="kanban-column bg-light rounded p-2 shadow-sm"
-          style={COLUMN_STYLE}
+          style={{ borderTop: `5px solid ${isTrashMode ? "#dc3545" : col.color}` }}
       >
         {/* CABEÇALHO DA COLUNA: Título, Botão de Adição e Contador */}
         <div className="d-flex justify-content-between align-items-center mb-3 px-2 pt-1">

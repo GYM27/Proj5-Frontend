@@ -4,7 +4,7 @@ import { useUserStore } from "../stores/UserStore";
 import { useHeaderStore } from "../stores/HeaderStore"; // Usar a Store do cabeçalho
 import api from "../services/api";
 import "../App.css";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 
 /**
  * O meu "Centro de Comando". 
@@ -24,6 +24,10 @@ const Dashboard = () => {
     clientes: 0,
     totalUsers: 0,
     confirmedUsers: 0,
+    growthData: [],
+    leadsGrowthData: [],
+    meusLeads: 0,
+    meusClientes: 0,
   });
 
   const navigate = useNavigate();
@@ -55,6 +59,10 @@ const Dashboard = () => {
         clientes: statsData.clientes || 0,
         totalUsers: statsData.totalUsers || 0,
         confirmedUsers: statsData.confirmedUsers || 0,
+        growthData: statsData.growthData || [],
+        leadsGrowthData: statsData.leadsGrowthData || [],
+        meusLeads: statsData.meusLeads || 0,
+        meusClientes: statsData.meusClientes || 0,
       });
     } catch (error) {
       console.error("Erro no Dashboard:", error.message);
@@ -100,6 +108,38 @@ const Dashboard = () => {
     { name: 'Ganhos', value: stats.ganhos, color: '#198754' },
     { name: 'Perdidos', value: stats.perdidos, color: '#dc3545' },
   ];
+
+  // CÁLCULO DE TAXA DE CONVERSÃO (Leads Totais vs Ganhos)
+  const conversionRate = stats.leads > 0 
+    ? ((stats.ganhos / stats.leads) * 100).toFixed(1) 
+    : 0;
+
+  // PROCESSAMENTO DOS DADOS PARA OS GRÁFICOS (MERGE DE LEADS E CLIENTES - 12 MESES)
+  const mergedChartData = () => {
+    // Gera os últimos 12 meses para garantir que o gráfico está completo
+    const months = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      months.push(d.toISOString().substring(0, 7)); // YYYY-MM
+    }
+
+    return months.map(month => ({
+      name: month,
+      leads: stats.leadsGrowthData.find(d => d.date === month)?.count || 0,
+      clientes: stats.growthData.find(d => d.date === month)?.count || 0
+    }));
+  };
+
+  const finalChartData = mergedChartData();
+
+  // FORMATADOR DE DATA PARA O EIXO X (Jan 24, Fev 24, etc.)
+  const formatMonth = (isoMonth) => {
+    if (isoMonth === 'Sem Dados') return isoMonth;
+    const [year, month] = isoMonth.split('-');
+    const date = new Date(year, month - 1);
+    return date.toLocaleDateString('pt-PT', { month: 'short', year: '2-digit' });
+  };
 
   return (
       <div className="container-fluid mb-5">
@@ -173,36 +213,86 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* SECÇÃO EXCLUSIVA DE ADMIN: Gráficos e Stats Extra */}
+        {/* PERFORMANCE E GRÁFICOS (Visível para Todos - Filtrado por Role no Backend) */}
+        <h4 className="mt-5 mb-4">{userRole === "ADMIN" ? "Visão Global" : "A Minha Performance"}</h4>
+        <div className="row g-4 mb-5">
+          <div className="col-md-4">
+            <div className="card text-center p-4 border-0 shadow-sm bg-white h-100" style={{ borderLeft: "5px solid #06b6d4", borderRadius: '12px' }}>
+              <div className="d-flex justify-content-between align-items-start mb-2">
+                <div className="small fw-bold text-uppercase text-muted">Eficiência de Vendas</div>
+                <i className="bi bi-info-circle text-muted" title={userRole === "ADMIN" ? "Taxa global de conversão da empresa" : "A sua taxa pessoal de conversão"}></i>
+              </div>
+              
+              <div className="h2 fw-bold mb-1" style={{ color: conversionRate > 30 ? '#10b981' : conversionRate > 15 ? '#f59e0b' : '#ef4444' }}>
+                {conversionRate}%
+              </div>
+              
+              <div className="small text-muted mb-3">
+                <strong>{stats.ganhos}</strong> ganhos de <strong>{stats.leads}</strong> leads
+              </div>
+
+              {/* BARRA DE PROGRESSO VISUAL */}
+              <div className="progress" style={{ height: '8px', borderRadius: '4px', backgroundColor: '#f1f5f9' }}>
+                <div 
+                  className="progress-bar" 
+                  role="progressbar" 
+                  style={{ 
+                    width: `${conversionRate}%`, 
+                    backgroundColor: conversionRate > 30 ? '#10b981' : conversionRate > 15 ? '#f59e0b' : '#ef4444',
+                    transition: 'width 1s ease-in-out'
+                  }}
+                  aria-valuenow={conversionRate} 
+                  aria-valuemin="0" 
+                  aria-valuemax="100"
+                ></div>
+              </div>
+              <div className="mt-2" style={{ fontSize: '0.7rem', color: '#64748b' }}>Taxa de Conversão {userRole === "ADMIN" ? "Global" : "Pessoal"}</div>
+            </div>
+          </div>
+          
+          <div className="col-md-8">
+            <div className="card p-3 border-0 shadow-sm bg-white h-100" style={{ borderRadius: '15px' }}>
+              <h6 className="fw-bold mb-3 px-2">Fluxo de Clientes e Novas leads ({userRole === "ADMIN" ? "Empresa" : "Individual"})</h6>
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={finalChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    fontSize={10} 
+                    tickFormatter={formatMonth} 
+                  />
+                  <YAxis axisLine={false} tickLine={false} fontSize={10} />
+                  <Tooltip 
+                    labelFormatter={formatMonth}
+                    cursor={{fill: '#f8f9fa'}}
+                    contentStyle={{borderRadius: '10px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} 
+                  />
+                  <Legend verticalAlign="top" align="right" iconType="circle" height={36}/>
+                  <Bar name="Leads Novas" dataKey="leads" fill="#0d6efd" radius={[4, 4, 0, 0]} barSize={20} />
+                  <Bar name="Clientes Ganhos" dataKey="clientes" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* SECÇÃO EXCLUSIVA DE ADMIN: Stats de Gestão de Utilizadores */}
         {userRole === "ADMIN" && (
           <>
-            <h4 className="mt-5 mb-4">Visão Global do Administrador</h4>
-            <div className="row g-4">
+            <h5 className="mb-4 fw-bold text-muted">Gestão de Equipa</h5>
+            <div className="row g-4 mb-5">
               <div className="col-md-3">
-                <div className="card text-center p-4 border-0 shadow-sm bg-white" style={{ borderLeft: "5px solid #6f42c1" }} onClick={() => navigate("/users")}>
-                  <div className="h6 opacity-75">Total Utilizadores</div>
-                  <div className="display-6 fw-bold text-purple">{stats.totalUsers}</div>
+                <div className="card text-center p-4 border-0 shadow-sm bg-white h-100" style={{ borderLeft: "5px solid #6f42c1", borderRadius: '12px', cursor: "pointer" }} onClick={() => navigate("/users")}>
+                  <div className="small fw-bold text-uppercase text-muted mb-1">Total Utilizadores</div>
+                  <div className="h3 fw-bold text-purple">{stats.totalUsers}</div>
                 </div>
               </div>
               <div className="col-md-3">
-                <div className="card text-center p-4 border-0 shadow-sm bg-white" style={{ borderLeft: "5px solid #20c997" }}>
-                  <div className="h6 opacity-75">Contas Confirmadas</div>
-                  <div className="display-6 fw-bold text-teal">{stats.confirmedUsers}</div>
-                </div>
-              </div>
-              <div className="col-md-6">
-                <div className="card p-3 border-0 shadow-sm bg-white h-100">
-                  <h6 className="text-center opacity-75 mb-3">Distribuição de Leads</h6>
-                  <ResponsiveContainer width="100%" height={200}>
-                    <PieChart>
-                      <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                        {pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
+                <div className="card text-center p-4 border-0 shadow-sm bg-white h-100" style={{ borderLeft: "5px solid #6366f1", borderRadius: '12px' }}>
+                  <div className="small fw-bold text-uppercase text-muted mb-1">Utilizadores Ativos</div>
+                  <div className="h3 fw-bold text-indigo">{stats.confirmedUsers}</div>
                 </div>
               </div>
             </div>

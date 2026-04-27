@@ -26,34 +26,37 @@ const Header = ({ onToggleMenu }) => {
       className="shadow-sm fixed-top"
       style={{ backgroundColor: "#1e2a78", height: "56px" }}
     >
-      <Container fluid>
-        <div className="d-flex align-items-center">
+      <Container fluid className="d-flex align-items-center justify-content-between" style={{ height: '100%' }}>
+        <div className="d-flex align-items-center h-100">
           {/* CONTROLADOR DA SIDEBAR:
               Botão de estilo "Hambúrguer" que dispara o evento 'onToggleMenu'
               para otimizar o espaço de trabalho no ecrã (Regra de Design).
           */}
           <button
-            className="btn text-white me-3 border-0"
+            className="btn text-white p-0 d-flex align-items-center justify-content-center border-0"
+            style={{ width: "40px", height: "40px", marginRight: "10px" }}
             onClick={onToggleMenu}
             aria-label="Toggle Sidebar"
           >
-            <i className="bi bi-list fs-4"></i>
+            <i className="bi bi-list fs-3"></i>
           </button>
           
           {/* COMPONENTE MODULAR: Identidade visual (Logo + Nome) */}
-          <HeaderLogo />
+          <div className="d-flex align-items-center h-100">
+            <HeaderLogo />
+          </div>
         </div>
 
         {/* SECÇÃO DIREITA:
             - 'ms-auto': Alinha o Menu do Utilizador totalmente à direita.
         */}
-        <Nav className="ms-auto d-flex align-items-center">
+        <div className="d-flex align-items-center h-100">
           {/* COMPONENTE MODULAR: Ícone de notificações dinâmico */}
           <HeaderNotifications />
 
           {/* COMPONENTE MODULAR: Gere a foto, nome e logout do utilizador */}
           <UserMenu />
-        </Nav>
+        </div>
       </Container>
     </Navbar>
   );

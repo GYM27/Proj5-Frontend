@@ -12,9 +12,10 @@
   --text-h: #212529;
   --bridge-blue: #1e2a78;
 
-  /* Kanban Card */
+  /* Kanban Card & Column */
   --kanban-card-height: 120px;
-  --kanban-card-height-mobile: 110px;
+  --kanban-card-height-mobile: 120px;
+  --kanban-column-width: 300px;
 }
 
 /* 2. LAYOUT PRINCIPAL */
@@ -170,15 +171,23 @@ body {
 /* ==========================================================================
    7. KANBAN CARD — Altura Fixa e Truncagem de Texto
    --------------------------------------------------------------------------
-   NOTA TÉCNICA: Não usamos classes utilitárias do Bootstrap (p-3, mb-3, etc.)
-   no LeadCard.jsx porque essas classes aplicam estilos com !important
-   internamente, o que torna impossível sobrepô-las a partir de um ficheiro CSS
-   externo. Em vez disso, usamos classes próprias (.kanban-card-body, etc.)
-   para ter controlo total da apresentação a partir deste ficheiro.
+   NOTA TÉCNICA: Usamos selectores de alta especificidade (ex: html body ...)
+   para sobrepor as regras do Bootstrap (.card, .card-body) sem recorrer a
+   !important. Isto garante controlo total e manutenção limpa.
    ========================================================================== */
 
-/* CARTÃO: Altura fixa com variável CSS para fácil manutenção */
-.kanban-card.card {
+/* COLUNA DO KANBAN: Largura fixa controlada por variável */
+#root .kanban-column {
+  width: var(--kanban-column-width);
+  min-width: var(--kanban-column-width);
+  max-width: var(--kanban-column-width);
+  display: flex;
+  flex-direction: column;
+}
+
+/* CARTÃO: Altura fixa — especifidade máxima com #root para vencer Bootstrap */
+#root .kanban-card.card {
+  width: 100%;
   height: var(--kanban-card-height);
   min-height: var(--kanban-card-height);
   max-height: var(--kanban-card-height);
@@ -186,22 +195,23 @@ body {
   display: flex;
   flex-direction: column;
   margin-bottom: 12px;
+  box-sizing: border-box;
 }
 
-/* CORPO DO CARTÃO: Layout flexbox vertical */
-.kanban-card.card .kanban-card-body {
+/* CORPO DO CARTÃO: Garante que o body não cresce além do card */
+#root .kanban-card.card > .card-body.kanban-card-body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   height: 100%;
   padding: 10px;
   overflow: hidden;
-  flex: none;
-  /* Anula o flex: 1 1 auto do Bootstrap .card-body */
+  flex: 1 1 auto;
+  min-height: 0; /* Impede que o conteúdo empurre o flex container */
 }
 
-/* TÍTULO: Limitado a 1 linha com reticências */
-.kanban-card .kanban-card-title {
+/* TÍTULO: Truncagem robusta */
+#root .kanban-card .kanban-card-title {
   display: -webkit-box;
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
@@ -214,41 +224,56 @@ body {
   flex-shrink: 0;
 }
 
-/* DESCRIÇÃO: Limitada a 3 linha com reticências */
-.kanban-card .kanban-card-description {
+/* DESCRIÇÃO: Truncagem robusta limitada a 2 linhas */
+#root .kanban-card .kanban-card-description {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  word-break: break-word;
+  word-break: break-word; /* Para permitir quebra de palavras longas */
   font-size: 0.75rem;
   color: #6c757d;
   line-height: 1.2;
   margin: 0 0 4px 0;
-  flex-shrink: 1;
+  flex-grow: 1;
   min-height: 0;
 }
 
-/* RODAPÉ: Nome do autor, data e botões de ação */
-.kanban-card .kanban-card-footer {
+/* RODAPÉ: Fixado no fundo */
+#root .kanban-card .kanban-card-footer {
   padding-top: 4px;
   margin-top: auto;
   flex-shrink: 0;
+  border-top: 1px solid var(--border);
 }
 
-.kanban-card .kanban-card-author {
+#root .kanban-card .kanban-card-author {
   font-size: 0.75rem;
   max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.kanban-card .kanban-card-date {
+/* ANIMAÇÕES GLOBAIS */
+@keyframes pulse-red {
+  0% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+  70% { transform: translate(-50%, -50%) scale(1.1); box-shadow: 0 0 0 6px rgba(220, 53, 69, 0); }
+  100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+}
+
+.animate-pulse {
+  animation: pulse-red 2s infinite;
+}
+
+#root .kanban-card .kanban-card-date {
   font-size: 0.7rem;
 }
 
 /* Ajustes para Mobile */
 @media (max-width: 767px) {
-  .kanban-card.card {
+  #root .kanban-card.card {
     height: var(--kanban-card-height-mobile);
     min-height: var(--kanban-card-height-mobile);
     max-height: var(--kanban-card-height-mobile);

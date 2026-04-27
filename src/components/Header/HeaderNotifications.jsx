@@ -13,12 +13,22 @@ const NotificationIcon = () => {
 
     return (
         <div className="position-relative p-2" style={{ cursor: "pointer" }} onClick={handleClick}>
-            {/* Ícone do Sino (Bootstrap Icons) */}
-            <i className="bi bi-bell-fill text-secondary fs-5" style={{ transition: "color 0.2s" }} onMouseOver={(e) => e.target.classList.replace("text-secondary", "text-primary")} onMouseOut={(e) => e.target.classList.replace("text-primary", "text-secondary")}></i>
+            {/* Ícone do Sino: Fica Amarelo (warning) se houver mensagens, senão fica Branco Suave */}
+            <i 
+                className={`bi bi-bell-fill fs-5 ${unreadCount > 0 ? 'text-warning' : 'text-white-50'}`} 
+                style={{ 
+                    transition: "all 0.3s ease",
+                    filter: unreadCount > 0 ? "drop-shadow(0 0 5px rgba(255, 193, 7, 0.5))" : "none",
+                    transform: unreadCount > 0 ? "scale(1.1)" : "scale(1)"
+                }}
+            ></i>
 
-            {/* O Badge (Bolinha Vermelha) - Só aparece se houver notificações */}
+            {/* O Badge (Bolinha Vermelha) - Agora com uma pequena pulsação visual se houver notificações */}
             {unreadCount > 0 && (
-                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light">
+                <span 
+                    className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light animate-pulse"
+                    style={{ fontSize: '0.65rem', padding: '0.35em 0.65em' }}
+                >
                     {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
             )}

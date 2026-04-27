@@ -28,6 +28,7 @@ const ChatPage = () => {
           recipient: m.receiver,
           content: m.content,
           type: "CHAT",
+          timestamp: m.timestamp,
           read: m.read
         }));
         
@@ -49,8 +50,12 @@ const ChatPage = () => {
 
   return (
     <div
-      className="container-fluid bg-white"
-      style={{ height: "calc(100vh - 70px)" }}
+      className="container p-0 shadow rounded-4 overflow-hidden mx-auto bg-white border"
+      style={{ 
+        height: "calc(100vh - 240px)", 
+        minHeight: "500px",
+        maxWidth: "1100px" 
+      }}
     >
       <div className="row h-100 g-0">
         {/* COLUNA DA ESQUERDA (ContactList) */}
