@@ -1,44 +1,51 @@
 import React, { useState, useEffect } from "react";
 import ContactList from "./ContactList"; // Importa o filho 1
 import ChatWindow from "./ChatWindow"; // Importa o filho 2
-import { userService } from "../../services/userService"; // Ajusta o caminho conforme a tua pasta
+import { userService } from "../../services/userService";
+import messageService from "../../services/messageService";
+import { useUserStore } from "../../stores/UserStore";
 
 const ChatPage = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [users, setUsers] = useState([]); // Aqui guardas os users que vêm do Java
+  const { username, resetUnread, setMessages, setUnreadCount } = useUserStore();
 
-  // 1. Lógica para carregar os utilizadores REAIS do Java
+  // 1. Lógica para carregar os utilizadores REAIS e o HISTÓRICO
   useEffect(() => {
-    const loadUsers = async () => {
+    const loadData = async () => {
       try {
-        // AGORA SIM: Chamamos o serviço que estava "sem uso"
-        const data = await userService.getAllUsers();
-        setUsers(data);
-      } catch (error) {
-        console.error("Erro ao carregar utilizadores:", error);
+        // Carrega Contactos
+        const usersData = await userService.getAllUsers();
+        const filteredUsers = usersData.filter(u => u.username !== username);
+        setUsers(filteredUsers);
 
-        // Opcional: Se o Java falhar, manter os fictícios para não ficar vazio no teste
-        setUsers([
-          {
-            id: 1,
-            username: "admin",
-            firstName: "Admin",
-            lastName: "Sistema",
-            userRole: "ADMIN",
-          },
-          {
-            id: 2,
-            username: "gestor",
-            firstName: "Luis",
-            lastName: "Silva",
-            userRole: "MANAGER",
-          },
-        ]);
+        // Carrega Histórico de Mensagens da Base de Dados
+        const historyData = await messageService.getHistory();
+        
+        // Mapeamos para o formato que a Store espera
+        const formattedHistory = historyData.map(m => ({
+          sender: m.sender,
+          recipient: m.receiver,
+          content: m.content,
+          type: "CHAT",
+          read: m.read
+        }));
+        
+        setMessages(formattedHistory);
+
+        // Calcula notificações (mensagens onde sou o destinatário e estão como não lidas)
+        const unread = formattedHistory.filter(m => m.recipient === username && !m.read).length;
+        setUnreadCount(unread);
+
+      } catch (error) {
+        console.error("Erro ao carregar dados do Chat:", error);
       }
     };
 
-    loadUsers();
-  }, []);
+    if (username) {
+      loadData();
+    }
+  }, [username, setMessages, setUnreadCount]);
 
   return (
     <div
@@ -57,6 +64,8 @@ const ChatPage = () => {
             users={users}
             onSelectUser={setSelectedUser}
             selectedUserId={selectedUser?.id}
+            allMessages={useUserStore(state => state.messages)}
+            myUsername={username}
           />
         </div>
 

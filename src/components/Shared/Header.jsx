@@ -2,6 +2,7 @@ import React from "react";
 import { Navbar, Container, Nav } from "react-bootstrap";
 import HeaderLogo from "../Header/HeaderLogo.jsx";
 import UserMenu from "../Header/UserMenu.jsx";
+import HeaderNotifications from "../Header/HeaderNotifications.jsx";
 
 /**
  * COMPONENTE: Header
@@ -15,7 +16,7 @@ const Header = ({ onToggleMenu }) => {
   return (
     /**
      * CONFIGURAÇÃO DA NAVBAR:
-     * - 'fixed-top': Garante que a navegação está sempre acessível durante o scroll (UX - 3%).
+     * - 'fixed-top': Garante que a navegação está sempre acessível durante o scroll .
      * - 'shadow-sm': Adiciona profundidade visual para separar o header do conteúdo.
      * - 'backgroundColor': Cor primária do CRM proj5 (#1e2a78).
      */
@@ -38,7 +39,7 @@ const Header = ({ onToggleMenu }) => {
           >
             <i className="bi bi-list fs-4"></i>
           </button>
-
+          
           {/* COMPONENTE MODULAR: Identidade visual (Logo + Nome) */}
           <HeaderLogo />
         </div>
@@ -46,7 +47,10 @@ const Header = ({ onToggleMenu }) => {
         {/* SECÇÃO DIREITA:
             - 'ms-auto': Alinha o Menu do Utilizador totalmente à direita.
         */}
-        <Nav className="ms-auto">
+        <Nav className="ms-auto d-flex align-items-center">
+          {/* COMPONENTE MODULAR: Ícone de notificações dinâmico */}
+          <HeaderNotifications />
+
           {/* COMPONENTE MODULAR: Gere a foto, nome e logout do utilizador */}
           <UserMenu />
         </Nav>

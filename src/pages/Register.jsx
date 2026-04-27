@@ -9,7 +9,8 @@ import {
   Row,
   Col,
 } from "react-bootstrap";
-import { registerUser } from "../services/registerService.js";
+import { useSearchParams } from "react-router-dom";
+import { userService } from "../services/userService.js";
 
 /**
  * COMPONENTE: Register
@@ -19,12 +20,14 @@ import { registerUser } from "../services/registerService.js";
  * o endpoint de registo do Backend Java.
  */
 function Register() {
-  // 1. ESTADO INICIAL UNIFICADO:
-  // Centraliza todos os campos num único objeto, facilitando a submissão (DRY).
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
+  const invitedEmail = searchParams.get("email") || "";
+
   const [inputs, setInputs] = useState({
     username: "",
     password: "",
-    email: "",
+    email: invitedEmail,
     firstName: "",
     lastName: "",
     cellphone: "",
@@ -50,16 +53,18 @@ function Register() {
     event.preventDefault();
     setError(null);
 
-    try {
-      // CHAMADA À API: Envia o objeto 'inputs' que corresponde ao DTO esperado no Java.
-      await registerUser(inputs);
+    if (!token) {
+        setError("Token de convite em falta. Não pode registar-se sem um convite válido.");
+        return;
+    }
 
-      // SUCESSO (UX - 3%): Redireciona para o login após a criação da conta,
-      // fechando o fluxo de Onboarding do utilizador.
+    try {
+      // CHAMADA À API: Usamos o novo método centralizado no userService
+      await userService.completeRegistration(token, inputs);
+
       navigate("/login");
     } catch (err) {
-      // TRATAMENTO DE ERRO: Exibe mensagens amigáveis em caso de falha (ex: username já existe).
-      setError(err.message || "Erro ao criar conta. Tente novamente.");
+      setError(err.message || "Erro ao criar conta. O convite pode ter expirado.");
     }
   };
 
@@ -120,7 +125,10 @@ function Register() {
                     value={inputs.email}
                     onChange={handleChange}
                     required
+                    readOnly={!!invitedEmail} // Bloqueia o email se vier do convite
+                    className={invitedEmail ? "bg-light" : ""}
                 />
+                {invitedEmail && <Form.Text className="text-muted small">Este é o email associado ao seu convite.</Form.Text>}
               </Form.Group>
 
               <Form.Group className="mb-3">

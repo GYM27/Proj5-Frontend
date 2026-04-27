@@ -15,6 +15,38 @@ import { Button } from "react-bootstrap";
  */
 const ConfirmActionContent = ({ type, data, onCancel, onConfirm }) => {
 
+    if (type === "USER_INVITE") {
+        return (
+            <div className="p-3">
+                <p className="text-muted mb-4 text-start">
+                    Insira o endereço de e-mail do novo colaborador. Ele receberá um link único para concluir o registo.
+                </p>
+                <div className="form-group text-start mb-4">
+                    <label className="form-label fw-bold">Endereço de E-mail</label>
+                    <input
+                        type="email"
+                        className="form-control"
+                        placeholder="exemplo@empresa.com"
+                        id="inviteEmail"
+                        required
+                    />
+                </div>
+                <div className="d-flex justify-content-end gap-2">
+                    <button className="btn btn-outline-secondary" onClick={onCancel}>Cancelar</button>
+                    <button
+                        className="btn btn-primary"
+                        onClick={() => {
+                            const email = document.getElementById('inviteEmail').value;
+                            if(email) onConfirm({ email });
+                        }}
+                    >
+                        <i className="bi bi-envelope-paper me-2"></i> Enviar Convite
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     /**
      * DICIONÁRIO DE CONFIGURAÇÃO (PATTERN: STRATEGY / FACTORY):
      * Em vez de múltiplos IFs espalhados, usamos um Switch para mapear
@@ -41,7 +73,6 @@ const ConfirmActionContent = ({ type, data, onCancel, onConfirm }) => {
                 };
 
             // ACÇÕES EM MASSA (BULK):
-            // Implementa limpeza rápida para Administradores.
             case "BULK_SOFT_DELETE":
                 return {
                     icon: "bi-trash-fill text-warning",
@@ -59,7 +90,6 @@ const ConfirmActionContent = ({ type, data, onCancel, onConfirm }) => {
                 };
 
             // GESTÃO DE UTILIZADORES:
-            // Mensagens específicas para o contexto de segurança e acesso.
             case "USER_HARD_DELETE":
                 return {
                     icon: "bi-person-x text-danger",
@@ -68,8 +98,6 @@ const ConfirmActionContent = ({ type, data, onCancel, onConfirm }) => {
                     variant: "danger",
                 };
 
-            // ACÇÕES DE RESTAURO (UX - FEEDBACK POSITIVO):
-            // Note-se o uso da variante 'success' (verde) para ações construtivas.
             case "RESTORE_LEAD":
                 return {
                     icon: "bi-arrow-counterclockwise text-success",
@@ -86,8 +114,6 @@ const ConfirmActionContent = ({ type, data, onCancel, onConfirm }) => {
                     variant: "success",
                 };
 
-            // LÓGICA DINÂMICA DE UTILIZADOR :
-            // Alterna a mensagem consoante o utilizador esteja Ativo ou Inativo.
             case "USER_TOGGLE_STATUS": {
                 const isInactive = data?.softDelete;
                 return {
@@ -99,34 +125,6 @@ const ConfirmActionContent = ({ type, data, onCancel, onConfirm }) => {
                     variant: isInactive ? "success" : "warning",
                 };
             };
-
-            case "USER_INVITE":
-                return (
-                    <div className="p-3">
-                        <p className="text-muted mb-4">
-                            Insira o endereço de e-mail do novo colaborador. Ele receberá um link único para concluir o registo.
-                        </p>
-                        <div className="form-group">
-                            <label className="form-label fw-bold">Endereço de E-mail</label>
-                            <input
-                                type="email"
-                                className="form-control"
-                                placeholder="exemplo@empresa.com"
-                                id="inviteEmail" // Usaremos o ID ou um estado local para capturar o valor
-                                required
-                            />
-                        </div>
-                        <div className="d-flex justify-content-end mt-4 gap-2">
-                            <button className="btn btn-light" onClick={onCancel}>Cancelar</button>
-                            <button
-                                className="btn btn-primary"
-                                onClick={() => onConfirm({ email: document.getElementById('inviteEmail').value })}
-                            >
-                                Enviar Convite
-                            </button>
-                        </div>
-                    </div>
-                );
 
             default:
                 return {
@@ -142,10 +140,7 @@ const ConfirmActionContent = ({ type, data, onCancel, onConfirm }) => {
 
     return (
         <div className="text-center p-3">
-            {/* Ícone dinâmico: display-4 garante visibilidade de aviso (UX - 3%) */}
             <i className={`${info.icon} display-4 mb-3 d-block`}></i>
-
-            {/* Mensagem: Uso de 'lead' do Bootstrap para maior destaque legível */}
             <p className="mb-4 lead" style={{ fontSize: "1.1rem" }}>
                 {info.message}
             </p>
@@ -156,7 +151,7 @@ const ConfirmActionContent = ({ type, data, onCancel, onConfirm }) => {
                 </Button>
                 <Button
                     variant={info.variant}
-                    onClick={() => onConfirm(data)} // Devolve os dados originais para o processamento final
+                    onClick={() => onConfirm(data)}
                 >
                     {info.confirmText}
                 </Button>

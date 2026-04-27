@@ -4,12 +4,25 @@ import { useUserStore } from "../stores/UserStore"; // Importante para a reativi
 import Sidebar from "../components/Shared/Sidebar.jsx";
 import Header from "../components/Shared/Header.jsx";
 import Footer from "../components/Shared/Footer.jsx";
+import useIdleTimeout from "../components/Shared/useIdleTimeout";
+import { useWebSocket } from "../components/Chat/useWebSocket";
+import { useHeaderStore } from "../stores/HeaderStore"; // Ponte para o cabeçalho
+import GenericHeader from "../components/Shared/GenericHeader";
 
 const MainLayout = () => {
+  // Inicializa o WebSocket assim que a MainLayout é montada (user autenticado)
+  useWebSocket();
+  
+  // Timeout de sessão de 15 minutos (900 segundos)
+  useIdleTimeout(15);
+
   // 1. SINCRONIZAÇÃO COM A STORE (REATIVIDADE):
   // Ao extrairmos o 'isAuthenticated', o MainLayout vai "ouvir" a Store.
   // Mal o handleLogout fizer 'clearUser()', este componente re-renderiza e expulsa o user.
   const isAuthenticated = useUserStore((state) => state.isAuthenticated);
+  
+  // 2. CONEXÃO COM O CABEÇALHO UNIFICADO:
+  const { title, subtitle, stats, showStats } = useHeaderStore();
 
   // 2. CORREÇÃO DE STORAGE:
   // coincidir com o teu apiRequest.js
@@ -42,8 +55,17 @@ const MainLayout = () => {
         <div className="d-flex flex-grow-1" style={{ marginTop: "56px" }}>
           <Sidebar isOpen={isOpen} />
           <div className="flex-grow-1 d-flex flex-column bg-light" style={{ minWidth: 0 }}>
-            <main className="p-4 flex-grow-1">
-              <Outlet />
+            <main className="flex-grow-1">
+              {/* O CABEÇALHO UNIFICADO: Estático e imutável no layout, dinâmico na informação */}
+              <GenericHeader 
+                title={title} 
+                subtitle={subtitle} 
+                stats={stats} 
+                showStats={showStats} 
+              />
+              <div className="p-4">
+                <Outlet />
+              </div>
             </main>
             <Footer />
           </div>

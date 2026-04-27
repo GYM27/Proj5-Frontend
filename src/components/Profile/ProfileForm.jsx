@@ -11,7 +11,7 @@ import { Form, Row, Col, Button, Spinner } from "react-bootstrap";
  * @param {boolean} isOwnProfile - Define se o formulário é editável (próprio perfil) ou apenas leitura.
  * @param {boolean} loading - Estado de carregamento para feedback visual no botão.
  */
-const ProfileForm = ({ formData, handleChange, handleSubmit, isOwnProfile, loading }) => (
+const ProfileForm = ({ formData, handleChange, handleSubmit, isOwnProfile, loading, hasChanges }) => (
     <Form onSubmit={handleSubmit}>
         <Row>
             {/* CAMPOS DE IDENTIFICAÇÃO:
@@ -53,8 +53,8 @@ const ProfileForm = ({ formData, handleChange, handleSubmit, isOwnProfile, loadi
                         name="username"
                         value={formData.username || ""}
                         onChange={handleChange}
-                        disabled={!isOwnProfile}
-                        required
+                        disabled={true} // Username não é editável
+                        readOnly
                     />
                 </Form.Group>
             </Col>
@@ -65,11 +65,13 @@ const ProfileForm = ({ formData, handleChange, handleSubmit, isOwnProfile, loadi
                     <Form.Control
                         type="password"
                         name="password"
-                        value={formData.password || ""}
-                        onChange={handleChange}
-                        disabled={!isOwnProfile}
-                        required
+                        value="********" // Valor visual dummy
+                        disabled={true} // Password não editável aqui
+                        readOnly
                     />
+                    <Form.Text className="text-muted">
+                        Para segurança, a password não pode ser editada aqui.
+                    </Form.Text>
                 </Form.Group>
             </Col>
         </Row>
@@ -114,7 +116,7 @@ const ProfileForm = ({ formData, handleChange, handleSubmit, isOwnProfile, loadi
         - Implementa feedback visual (Spinner) durante a comunicação assíncrona com o servidor.
     */}
         {isOwnProfile && (
-            <Button variant="primary" type="submit" className="w-100 fw-bold" disabled={loading}>
+            <Button variant="primary" type="submit" className="w-100 fw-bold" disabled={loading || !hasChanges}>
                 {loading ? (
                     <>
                         <Spinner size="sm" className="me-2" />

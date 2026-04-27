@@ -1,14 +1,16 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useUserStore } from "../stores/UserStore"; // Importação da Store para RBAC
+import { useUserStore } from "../stores/UserStore";
+import { useHeaderStore } from "../stores/HeaderStore"; // Usar a Store do cabeçalho
 import api from "../services/api";
 import "../App.css";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 
 /**
- * COMPONENTE: Dashboard
- * --------------------
- * DESCRIÇÃO: Painel central de indicadores de desempenho (KPIs).
- * FUNCIONALIDADE: Adapta a visualização de dados com base no Role do utilizador (ADMIN vs USER).
+ * O meu "Centro de Comando". 
+ * É aqui que monitorizo a saúde do negócio. 
+ * O código adapta-se: se eu for Admin, vejo a empresa toda; 
+ * se for Vendedor, foco-me apenas nos meus números.
  */
 const Dashboard = () => {
   // ESTADO DOS INDICADORES: Inicializados a zero para garantir uma UI limpa durante o fetch.
@@ -20,6 +22,8 @@ const Dashboard = () => {
     perdidos: 0,
     leads: 0,
     clientes: 0,
+    totalUsers: 0,
+    confirmedUsers: 0,
   });
 
   const navigate = useNavigate();
@@ -37,25 +41,20 @@ const Dashboard = () => {
     if (!userRole) return;
 
     try {
-      // Roteamento dinâmico restabelecido!
-      // Como o Java já tem o Regex, o /admin vai funcionar na perfeição.
-      const leadsEndpoint = userRole === "ADMIN" ? "/leads/" : "/leads";
-      const clientsEndpoint = userRole === "ADMIN" ? "/clients/" : "/clients";
+      // Usa o novo endpoint que já retorna as estatísticas agregadas
+      const statsData = await api("/dashboard/stats");
 
-      const [leads, clientes] = await Promise.all([
-        api(leadsEndpoint),
-        api(clientsEndpoint)
-      ]);
-
-      // PROCESSAMENTO: Filtra o array retornado para popular os contadores do funil.
+      // PROCESSAMENTO: Atribui diretamente os valores agregados pelo backend
       setStats({
-        novos: leads.filter((l) => Number(l.state) === 1).length,
-        analise: leads.filter((l) => Number(l.state) === 2).length,
-        propostas: leads.filter((l) => Number(l.state) === 3).length,
-        ganhos: leads.filter((l) => Number(l.state) === 4).length,
-        perdidos: leads.filter((l) => Number(l.state) === 5).length,
-        leads: leads.length,
-        clientes: clientes.length,
+        novos: statsData.novos || 0,
+        analise: statsData.analise || 0,
+        propostas: statsData.propostas || 0,
+        ganhos: statsData.ganhos || 0,
+        perdidos: statsData.perdidos || 0,
+        leads: statsData.leads || 0,
+        clientes: statsData.clientes || 0,
+        totalUsers: statsData.totalUsers || 0,
+        confirmedUsers: statsData.confirmedUsers || 0,
       });
     } catch (error) {
       console.error("Erro no Dashboard:", error.message);
@@ -71,6 +70,8 @@ const Dashboard = () => {
     }
   }, [navigate, userRole]);
 
+  const { setHeader } = useHeaderStore();
+
   /**
    * CICLO DE VIDA E SINCRONIZAÇÃO:
    * O Dashboard "acorda" assim que o utilizador está autenticado.
@@ -78,19 +79,31 @@ const Dashboard = () => {
   useEffect(() => {
     let isMounted = true;
 
+    // DEFINE O CABEÇALHO NO LAYOUT UNIFICADO
+    setHeader({
+      title: `Olá, ${firstName || "Utilizador"}`,
+      subtitle: userRole === "ADMIN" ? "Painel de Administração Global" : "O seu resumo de vendas de hoje",
+      showStats: false
+    });
+
     if (isMounted && isAuthenticated) {
       fetchDashboardData();
     }
 
     return () => { isMounted = false; };
-  }, [fetchDashboardData, isAuthenticated]);
+  }, [fetchDashboardData, isAuthenticated, firstName, userRole, setHeader]);
+
+  const pieData = [
+    { name: 'Novos', value: stats.novos, color: '#0d6efd' },
+    { name: 'Análise', value: stats.analise, color: '#6610f2' },
+    { name: 'Propostas', value: stats.propostas, color: '#fd7e14' },
+    { name: 'Ganhos', value: stats.ganhos, color: '#198754' },
+    { name: 'Perdidos', value: stats.perdidos, color: '#dc3545' },
+  ];
 
   return (
-      <div className="container-fluid">
-        {/* BARRA DE BOAS-VINDAS PERSONALIZADA (UX - 3%) */}
-        <div className="barra-welcome mb-4 p-3 bg-light rounded shadow-sm d-flex justify-content-between align-items-center">
-          <h3 className="m-0">Olá, <strong>{firstName || "Utilizador"}</strong></h3>
-        </div>
+      <div className="container-fluid mb-5">
+        {/* O CABEÇALHO FOI MOVIDO PARA O MAINLAYOUT PARA EVITAR DESLOCAÇÕES */}
 
         {/* FUNIL DE VENDAS: Cards clicáveis que aplicam filtros na navegação */}
         <div className="row g-3 mb-4 justify-content-center">
@@ -114,29 +127,87 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* TOTAIS GERAIS: Links diretos para as listagens completas */}
-        <div className="row g-4 mb-4 justify-content-center">
-          <div className="col-md-5">
-            <div
-                className="card text-center p-4 border-0 shadow-sm bg-white"
-                style={{ cursor: "pointer", borderLeft: "5px solid #0d6efd" }}
-                onClick={() => navigate("/leads")}
-            >
-              <div className="h5 opacity-75">Total de Oportunidades</div>
-              <div className="display-5 fw-bold text-primary">{stats.leads}</div>
+        {/* FUNIL DE VENDAS (VISUAL): Agora disponível para todos */}
+        <div className="row g-4 mb-4">
+          <div className="col-md-7">
+            <div className="card p-4 border-0 shadow-sm bg-white h-100" style={{ borderRadius: '15px' }}>
+              <h5 className="fw-bold mb-4">O Meu Funil de Vendas</h5>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={pieData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                  <YAxis axisLine={false} tickLine={false} />
+                  <Tooltip cursor={{fill: '#f8f9fa'}} contentStyle={{borderRadius: '10px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
+                  <Bar dataKey="value" radius={[5, 5, 0, 0]}>
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
           <div className="col-md-5">
-            <div
-                className="card text-center p-4 border-0 shadow-sm bg-white"
-                style={{ cursor: "pointer", borderLeft: "5px solid #198754" }}
-                onClick={() => navigate("/clients")}
-            >
-              <div className="h5 opacity-75">Total de Clientes</div>
-              <div className="display-5 fw-bold text-success">{stats.clientes}</div>
+            <div className="row g-3">
+              <div className="col-12">
+                <div
+                    className="card p-4 border-0 shadow-sm bg-white"
+                    style={{ cursor: "pointer", borderLeft: "5px solid #6366f1", borderRadius: '12px' }}
+                    onClick={() => navigate("/leads")}
+                >
+                  <div className="small fw-bold text-uppercase text-muted mb-1">Total de Oportunidades</div>
+                  <div className="h2 fw-bold text-indigo">{stats.leads}</div>
+                </div>
+              </div>
+              <div className="col-12">
+                <div
+                    className="card p-4 border-0 shadow-sm bg-white"
+                    style={{ cursor: "pointer", borderLeft: "5px solid #10b981", borderRadius: '12px' }}
+                    onClick={() => navigate("/clients")}
+                >
+                  <div className="small fw-bold text-uppercase text-muted mb-1">Total de Clientes</div>
+                  <div className="h2 fw-bold text-success">{stats.clientes}</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* SECÇÃO EXCLUSIVA DE ADMIN: Gráficos e Stats Extra */}
+        {userRole === "ADMIN" && (
+          <>
+            <h4 className="mt-5 mb-4">Visão Global do Administrador</h4>
+            <div className="row g-4">
+              <div className="col-md-3">
+                <div className="card text-center p-4 border-0 shadow-sm bg-white" style={{ borderLeft: "5px solid #6f42c1" }} onClick={() => navigate("/users")}>
+                  <div className="h6 opacity-75">Total Utilizadores</div>
+                  <div className="display-6 fw-bold text-purple">{stats.totalUsers}</div>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="card text-center p-4 border-0 shadow-sm bg-white" style={{ borderLeft: "5px solid #20c997" }}>
+                  <div className="h6 opacity-75">Contas Confirmadas</div>
+                  <div className="display-6 fw-bold text-teal">{stats.confirmedUsers}</div>
+                </div>
+              </div>
+              <div className="col-md-6">
+                <div className="card p-3 border-0 shadow-sm bg-white h-100">
+                  <h6 className="text-center opacity-75 mb-3">Distribuição de Leads</h6>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                      <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                        {pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
   );
 };

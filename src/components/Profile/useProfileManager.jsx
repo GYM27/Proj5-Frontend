@@ -19,11 +19,15 @@ export const useProfileManager = (targetUsername, isOwnProfile) => {
   // Gestor centralizado de modais de confirmação
   const { modalConfig, openModal, closeModal } = useModalManager();
 
-  // <-- 2. VAI BUSCAR A FUNÇÃO PARA ATUALIZAR A FOTO NO HEADER
+  // <-- 2. VAI BUSCAR AS FUNÇÕES PARA ATUALIZAR O HEADER EM TEMPO REAL
   const setPhotoUrl = useUserStore((state) => state.setPhotoUrl);
+  const setNames = useUserStore((state) => state.setNames);
 
   /** @type {[Object, Function]} Estado que guarda os dados do perfil atualmente em visualização/edição. */
   const [formData, setFormData] = useState({});
+
+  /** @type {[Object, Function]} Cópia dos dados originais para detetar alterações (Dirty Checking). */
+  const [originalData, setOriginalData] = useState({});
 
   /** @type {[boolean, Function]} Estado que indica se os dados do perfil estão a ser carregados. */
   const [loading, setLoading] = useState(true);
@@ -40,6 +44,7 @@ export const useProfileManager = (targetUsername, isOwnProfile) => {
           ? await userService.getMe()
           : await userService.getUserByUsername(targetUsername);
         setFormData(data);
+        setOriginalData(data); // Guarda o estado original para comparação posterior
       } catch (err) {
         console.error("Erro ao carregar dados do perfil:", err);
       } finally {
@@ -59,6 +64,14 @@ export const useProfileManager = (targetUsername, isOwnProfile) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  /** Calcula se existem alterações pendentes para habilitar/desabilitar o botão de guardar */
+  const hasChanges = 
+    formData.firstName !== originalData.firstName ||
+    formData.lastName !== originalData.lastName ||
+    formData.email !== originalData.email ||
+    formData.cellphone !== originalData.cellphone ||
+    formData.photoUrl !== originalData.photoUrl;
+
   /**
    * <-- 4. NOVA FUNÇÃO: Guarda na Base de Dados e atualiza o Header
    * Submete as alterações do perfil para a API e atualiza a fotografia de forma global.
@@ -66,17 +79,34 @@ export const useProfileManager = (targetUsername, isOwnProfile) => {
    */
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!hasChanges) return; // Salvaguarda adicional
+
     try {
       setLoading(true);
+
+      // Criar um payload limpo apenas com os campos que o backend espera
+      // Isto evita o erro UnrecognizedPropertyException no WildFly (Jackson)
+      const payload = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        cellphone: formData.cellphone,
+        photoUrl: formData.photoUrl
+        // password removida: a edição de password não é feita neste formulário
+      };
+
       // Chama a API para gravar os dados
-      await userService.updateMyProfile(formData);
+      await userService.updateMyProfile(payload);
 
-      // ✨ A FOTO MUDA NO HEADER AQUI ✨
+      // ✨ O NOME E A FOTO MUDAM NOS HEADERS AQUI ✨
       setPhotoUrl(formData.photoUrl);
+      setNames(formData.firstName, formData.lastName);
 
+      setOriginalData(formData); // Atualiza o original após sucesso para futuras edições
       alert("Perfil atualizado com sucesso!");
     } catch (err) {
-      alert("Erro ao guardar o perfil.");
+      alert("Erro ao guardar o perfil: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -122,6 +152,7 @@ export const useProfileManager = (targetUsername, isOwnProfile) => {
     closeModal,
     handleConfirmAction,
     handleChange,
-    handleSubmit, // <-- 5. EXPORTA AS NOVAS FUNÇÕES
+    handleSubmit,
+    hasChanges, // <-- EXPORTA O ESTADO DE ALTERAÇÕES
   };
 };

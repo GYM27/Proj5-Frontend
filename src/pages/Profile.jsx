@@ -2,6 +2,8 @@ import React from "react";
 import { useSearchParams } from "react-router-dom";
 import { Container, Card, Spinner, Row, Col } from "react-bootstrap";
 import { useUserStore } from "../stores/UserStore";
+import { useHeaderStore } from "../stores/HeaderStore"; // Novo
+import { useEffect } from "react";
 
 // O TEU HOOK CÉREBRO (Lógica de Negócio isolada)
 import { useProfileManager } from "../components/Profile/useProfileManager.jsx";
@@ -40,9 +42,21 @@ const Profile = () => {
     openModal,
     closeModal,
     handleConfirmAction,
-    handleChange,    // <-- EXTRAÍDO AQUI
-    handleSubmit     // <-- EXTRAÍDO AQUI
+    handleChange,    
+    handleSubmit,     
+    hasChanges     // <-- EXTRAÍDO AQUI
   } = useProfileManager(targetUserId, isOwnProfile);
+
+  const { setHeader } = useHeaderStore();
+
+  // ATUALIZA O CABEÇALHO GLOBAL
+  useEffect(() => {
+    setHeader({
+      title: isOwnProfile ? "O Meu Perfil" : `Perfil de ${formData?.firstName}`,
+      subtitle: formData?.email || "Dados do utilizador",
+      showStats: false
+    });
+  }, [isOwnProfile, formData?.firstName, formData?.email, setHeader]);
 
   // FEEDBACK VISUAL DE CARREGAMENTO MELHORADO
   if (loading) {
@@ -61,14 +75,10 @@ const Profile = () => {
             {/* CARD PRINCIPAL: Adicionado arredondamento moderno (rounded-4) e sombra suave */}
             <Card className="shadow border-0 rounded-4 overflow-hidden">
 
-              {/* CABEÇALHO DO PERFIL: Fundo cinza super claro para destacar a foto */}
-              <div className="bg-light pt-5 pb-4 px-4 text-center border-bottom">
+              {/* CABEÇALHO DO PERFIL: Movido para o layout unificado */}
+              <div className="bg-light pt-3 pb-4 px-4 text-center border-bottom">
                 <ProfilePhoto photoUrl={formData?.photoUrl} firstName={formData?.firstName} lastName={formData?.lastName} />
-                <h2 className="fw-bolder mt-3 text-dark mb-1">
-                  {isOwnProfile ? "O Meu Perfil" : `Perfil de ${formData?.firstName}`}
-                </h2>
-                <p className="text-muted mb-0">{formData?.email}</p>
-
+                
                 {/* ALERTA DE ESTADO (REGRA A9): Badge em forma de pílula (rounded-pill) */}
                 {formData?.softDelete && (
                     <span className="badge bg-danger bg-gradient rounded-pill px-4 py-2 mt-3 shadow-sm">
@@ -86,6 +96,7 @@ const Profile = () => {
                     handleSubmit={handleSubmit}
                     isOwnProfile={isOwnProfile}
                     loading={loading}
+                    hasChanges={hasChanges} // <-- PASSADO PARA O FORM
                 />
 
                 {/* PAINEL DE ADMINISTRAÇÃO: "Danger Zone" */}

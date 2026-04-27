@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ResetPassword from "./pages/ResetPassword";
 import MainLayout from "./pages/MainLayout";
 import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
@@ -24,6 +25,7 @@ function App() {
         {/* Rotas Públicas (Sem Header/Sidebar) */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route element={<MainLayout />}>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

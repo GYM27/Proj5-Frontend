@@ -10,7 +10,9 @@ import {
   Alert,
   Row,
   Col,
+  Modal
 } from "react-bootstrap";
+import { userService } from "../services/userService";
 
 /**
  * COMPONENTE: Login
@@ -24,6 +26,12 @@ function Login() {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Estados do Modal de Recuperação de Password
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotMessage, setForgotMessage] = useState(null);
+  const [isForgotLoading, setIsForgotLoading] = useState(false);
 
   // GESTÃO DE ESTADO GLOBAL (ZUSTAND):
   // Importamos a ação 'setUser' para guardar os dados do utilizador após o sucesso.
@@ -86,6 +94,27 @@ function Login() {
     }
   };
 
+  /**
+   * FLUXO DE RECUPERAÇÃO DE PASSWORD:
+   * Envia o email inserido para a API. Se o utilizador existir,
+   * a API envia um email com o token de recuperação.
+   */
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setForgotMessage(null);
+    setIsForgotLoading(true);
+
+    try {
+      const response = await userService.forgotPassword(forgotEmail);
+      setForgotMessage({ type: "success", text: response.message || "Se o email existir, receberá instruções em breve." });
+      setForgotEmail("");
+    } catch (err) {
+      setForgotMessage({ type: "danger", text: err.message || "Erro ao solicitar recuperação." });
+    } finally {
+      setIsForgotLoading(false);
+    }
+  };
+
   return (
       <Container className="d-flex justify-content-center align-items-center vh-100">
         <Row>
@@ -144,16 +173,58 @@ function Login() {
                   </Button>
 
                   <div className="text-center mt-4">
-                    <span className="text-muted small">Ainda não tem conta? </span>
-                    <Link to="/register" className="text-decoration-none fw-bold small">
-                      Registe-se aqui
-                    </Link>
+                    <span className="text-muted small">Esqueceu-se da password? </span>
+                    <Button 
+                      variant="link" 
+                      className="text-decoration-none fw-bold small p-0 m-0 align-baseline"
+                      onClick={() => setShowForgotModal(true)}
+                    >
+                      Recuperar aqui
+                    </Button>
                   </div>
                 </Form>
               </Card.Body>
             </Card>
           </Col>
         </Row>
+
+        {/* MODAL DE RECUPERAÇÃO DE PASSWORD */}
+        <Modal show={showForgotModal} onHide={() => setShowForgotModal(false)} centered>
+          <Modal.Header closeButton>
+            <Modal.Title className="fs-5 fw-bold">Recuperar Password</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {forgotMessage && (
+              <Alert variant={forgotMessage.type} className="py-2 small">
+                {forgotMessage.text}
+              </Alert>
+            )}
+            <p className="small text-muted mb-3">
+              Insira o email associado à sua conta. Se o email existir no sistema, enviaremos um link de recuperação.
+            </p>
+            <Form onSubmit={handleForgotPassword}>
+              <Form.Group className="mb-3" controlId="formForgotEmail">
+                <Form.Label className="fw-bold text-secondary small">Email</Form.Label>
+                <Form.Control
+                  type="email"
+                  placeholder="exemplo@empresa.com"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  required
+                  disabled={isForgotLoading}
+                />
+              </Form.Group>
+              <div className="d-flex justify-content-end gap-2">
+                <Button variant="outline-secondary" onClick={() => setShowForgotModal(false)}>
+                  Cancelar
+                </Button>
+                <Button variant="primary" type="submit" disabled={isForgotLoading || !forgotEmail}>
+                  {isForgotLoading ? "A enviar..." : "Enviar Email"}
+                </Button>
+              </div>
+            </Form>
+          </Modal.Body>
+        </Modal>
       </Container>
   );
 }

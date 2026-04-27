@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useUserStore } from "../../stores/UserStore";
+import api from "../../services/api";
+import messageService from "../../services/messageService";
 
 const ChatWindow = ({ selectedUser, onBack }) => {
   const [input, setInput] = useState("");
@@ -16,20 +18,72 @@ const ChatWindow = ({ selectedUser, onBack }) => {
         (m.sender === selectedUser.username && m.recipient === myUsername)),
   );
 
-  // Faz scroll automático para a última mensagem quando o histórico muda
+  // 1. Scroll automático
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [chatHistory]);
 
-  const handleSend = () => {
+  // 2. Lógica de marcação de leitura
+  useEffect(() => {
+    const hasUnread = chatHistory.some(m => m.sender === selectedUser.username && !m.read);
+    
+    if (hasUnread) {
+      const markAsRead = async () => {
+        try {
+          await messageService.markAsRead(selectedUser.username);
+          
+          const currentMessages = useUserStore.getState().messages;
+          const updatedMessages = currentMessages.map(m => 
+            (m.sender === selectedUser.username && m.recipient === myUsername) 
+            ? { ...m, read: true } 
+            : m
+          );
+          
+          useUserStore.setState({ 
+            messages: updatedMessages,
+            unreadCount: updatedMessages.filter(m => m.recipient === myUsername && !m.read).length
+          });
+        } catch (error) {
+          console.error("Erro ao marcar como lidas:", error);
+        }
+      };
+      markAsRead();
+    }
+  }, [chatHistory, selectedUser.username, myUsername]);
+
+  const { addMessage } = useUserStore();
+
+  const handleSend = async () => {
     if (!input.trim()) return;
 
-    // Aqui simulamos o envio. No futuro, o teu Hook WebSocket terá uma função sendMessage
-    console.log("A enviar para:", selectedUser.username, "Conteúdo:", input);
+    const messageContent = input.trim();
+    setInput(""); // Limpa o input imediatamente para UI fluida
 
-    setInput("");
+    try {
+      // Cria o payload conforme o MessageDto do backend
+      const payload = {
+        receiver: selectedUser.username,
+        content: messageContent,
+        type: "CHAT"
+      };
+
+      // Chama a API (Backend valida o token pelo header e grava/emite no WebSocket)
+      await api('/messages', 'POST', payload);
+
+      // Atualiza o estado local para ver a mensagem que acabou de enviar
+      addMessage({
+        sender: myUsername,
+        recipient: selectedUser.username,
+        content: messageContent,
+        type: "CHAT"
+      });
+      
+    } catch (error) {
+      console.error("Erro ao enviar mensagem:", error);
+      // Opcional: mostrar toast de erro ou recolocar o texto no input
+    }
   };
 
   return (

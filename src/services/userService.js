@@ -14,6 +14,16 @@ export const userService = {
         return await api(`/users/register?token=${token}`, "POST", userData);
     },
 
+    // Para o utilizador pedir recuperação de password
+    forgotPassword: async (email) => {
+        return await api("/users/forgot-password", "POST", { email });
+    },
+
+    // Para o utilizador definir a nova password usando o token do email
+    resetPassword: async (token, password) => {
+        return await api(`/users/reset-password?token=${token}`, "POST", { password });
+    },
+
     /**
      */
     getMe: async () => {

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useUserStore } from "../../stores/UserStore";
-import { WS_BASE_URL } from "../services/api";
+import { WS_BASE_URL } from "../../services/api";
 
 export const useWebSocket = () => {
     const websocket = useRef(null);

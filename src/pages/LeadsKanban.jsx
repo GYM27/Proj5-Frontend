@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Container, Spinner } from "react-bootstrap";
 import { useLeadStore } from "../stores/LeadsStore";
 import { useUserStore } from "../stores/UserStore";
+import { useHeaderStore } from "../stores/HeaderStore"; // Novo
 import { userService } from "../services/userService";
 
 // Componentes da Pasta Shared
@@ -47,13 +48,20 @@ const LeadsKanban = () => {
     const [filters, setFilters] = useState({ userId: "", state: "" });
     const [isTrashMode, setIsTrashMode] = useState(false);
 
-    // 2. GESTÃO DE MODAIS
+    // 2. GESTÃO DE MODAIS E CABEÇALHO
     const { modalConfig, openModal, closeModal } = useModalManager();
+    const { setHeader } = useHeaderStore();
 
     // 3. AÇÕES CENTRALIZADAS
     // Recriamos um objeto com as ações para não quebrar o hook partilhado
     const storeActions = { fetchMyLeads, deleteLead, handleBulkAction, restoreLead };
     const { leads: actions } = useResourceActions(openModal, filters, { leadStore: storeActions, userRole });
+
+    // CÁLCULO DO NOME PARA O CABEÇALHO (Necessário antes do useEffect)
+    const selectedUser = users.find(u => String(u.id) === String(filters.userId));
+    const displayName = isAdmin
+        ? (selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : "GERAL ADMIN")
+        : currentUserName;
 
     // 4. CARREGAMENTO DE DADOS (Utilizadores para Admin)
     useEffect(() => {
@@ -71,7 +79,15 @@ const LeadsKanban = () => {
             userId: filters.userId,
             softDeleted: isTrashMode
         });
-    }, [userRole, filters.userId, isTrashMode]);
+
+        // ATUALIZA O CABEÇALHO GLOBAL
+        setHeader({
+            title: isTrashMode ? "LIXEIRA" : "LEADS",
+            subtitle: `Total: ${leads.length} registos | Responsável: ${displayName}`,
+            isTrash: isTrashMode,
+            showStats: false
+        });
+    }, [userRole, filters.userId, isTrashMode, leads.length, displayName, setHeader]);
 
     // FEEDBACK DE LOADING
     if (loading && leads.length === 0) {
@@ -83,10 +99,7 @@ const LeadsKanban = () => {
         );
     }
 
-    const selectedUser = users.find(u => String(u.id) === String(filters.userId));
-    const displayName = isAdmin
-        ? (selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : "GERAL ADMIN")
-        : currentUserName;
+
 
     return (
         <Container fluid className="mt-4 px-4">

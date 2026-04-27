@@ -1,5 +1,4 @@
 import { userService } from "../../services/userService.js";
-import {data} from "react-router-dom";
 
 /**
  * HOOK: useUserActions
@@ -22,8 +21,8 @@ export const useUserActions = (onSuccess, onComplete) => {
                     await userService.toggleUserStatus(userData.id, action);
                 },
                 "USER_INVITE": async () => {
-                    // Chama o POST /users/invite enviando o EmailDTO
-                    await userService.inviteUser(data);
+                    // Chama o POST /users/invite enviando o userData { email: '...' }
+                    await userService.inviteUser(userData);
                 }
             };
 

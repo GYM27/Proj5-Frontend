@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Container, Spinner, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "../stores/UserStore";
+import { useHeaderStore } from "../stores/HeaderStore"; // Novo
 import { userService } from "../services/userService";
 
 // Componentes extraídos
@@ -25,6 +26,7 @@ const Users = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const { setHeader } = useHeaderStore();
     const { modalConfig, openModal, closeModal } = useModalManager();
 
     /**
@@ -49,7 +51,14 @@ const Users = () => {
             return;
         }
         loadUsers();
-    }, [isAdmin, navigate, loadUsers]);
+
+        // ATUALIZA O CABEÇALHO GLOBAL
+        setHeader({
+            title: "GESTÃO DE EQUIPA",
+            subtitle: "Administração de utilizadores, permissões e estados das contas.",
+            showStats: false
+        });
+    }, [isAdmin, navigate, loadUsers, setHeader]);
 
     const { executeUserAction } = useUserActions(loadUsers, closeModal);
 

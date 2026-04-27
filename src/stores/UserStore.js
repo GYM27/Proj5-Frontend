@@ -42,6 +42,10 @@ export const useUserStore = create(
             // Permite atualizar a imagem de perfil sem necessidade de um novo login.
             setPhotoUrl: (url) => set({ photoUrl: url }),
 
+            // ACÇÃO: setNames (UPDATE PARCIAL):
+            // Atualiza o nome e apelido em tempo real em toda a interface.
+            setNames: (firstName, lastName) => set({ firstName, lastName }),
+
             // --- NOVAS ACÇÕES PARA O WEBSOCKET ---
             
             /** * Adiciona uma nova mensagem ao estado global.
@@ -51,10 +55,16 @@ export const useUserStore = create(
                 messages: [...messages, newMessage]
             })),
 
+            /** Substitui a lista de mensagens pelo histórico do backend */
+            setMessages: (history) => set({ messages: history }),
+
             /** Incrementa o contador de notificações (bolinha vermelha no Header) */
             incrementUnread: () => set(({unreadCount}) => ({
                 unreadCount: unreadCount + 1
             })),
+
+            /** Define o valor exato das notificações (usado ao carregar histórico) */
+            setUnreadCount: (count) => set({ unreadCount: count }),
 
             /** Limpa as notificações (ex: quando o user clica no sino ou abre o chat) */
             resetUnread: () => set({ unreadCount: 0 }),

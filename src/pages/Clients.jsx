@@ -2,6 +2,7 @@ import React, {useEffect, useState} from "react";
 import {Container, Spinner, Row, Col} from "react-bootstrap";
 import {useClientStore} from "../stores/ClientsStore";
 import {useUserStore} from "../stores/UserStore";
+import {useHeaderStore} from "../stores/HeaderStore"; // Novo
 import {userService} from "../services/userService";
 
 // COMPONENTES SHARED (Arquitetura Modular - 5%)
@@ -33,9 +34,9 @@ const Clients = () => {
     const [filters, setFilters] = useState({userId: ""});
     const [users, setUsers] = useState([]);
 
-    // 2. GESTÃO DE MODAIS E ACÇÕES VIA SHARED HOOKS:
-    // Centralizamos a lógica de interface para evitar repetição de código (DRY).
+    // 2. GESTÃO DE MODAIS E CABEÇALHO:
     const {modalConfig, openModal, closeModal} = useModalManager();
+    const {setHeader} = useHeaderStore();
 
     // Injetamos as dependências para obter as ações prontas para serem distribuídas pelos Cards e Header.
     const {clients: actions} = useResourceActions(openModal, filters, {clientStore, userRole});
@@ -56,7 +57,18 @@ const Clients = () => {
             userId: filters.userId || null,
             showTrash: isTrashMode,
         });
-    }, [userRole, filters.userId, isTrashMode, clientStore.fetchClients]);
+
+        // ATUALIZA O CABEÇALHO GLOBAL
+        const selectedUser = users.find((u) => String(u.id) === String(filters.userId));
+        const displayName = selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : "Todos";
+
+        setHeader({
+            title: isTrashMode ? "LIXEIRA CLIENTES" : "CLIENTES",
+            subtitle: `Total: ${clientStore.clients.length} registos | Responsável: ${displayName}`,
+            isTrash: isTrashMode,
+            showStats: false
+        });
+    }, [userRole, filters.userId, isTrashMode, clientStore.fetchClients, clientStore.clients.length, users, setHeader]);
 
     // FEEDBACK VISUAL DE CARREGAMENTO (UX - 3%)
     if (clientStore.loading && clientStore.clients.length === 0) {
