@@ -13,38 +13,36 @@ import ActionGroup from "../Shared/ActionGroup";
  */
 const LeadCard = ({ lead, isTrashMode, isAdmin, cardActions }) => {
   return (
-      <Card className="shadow-sm border-0 kanban-card mb-3">
-        <Card.Body className="p-3">
+    <Card className="shadow-sm border-0 kanban-card">
+      <Card.Body className="kanban-card-body">
+        {/* TÍTULO DA LEAD */}
+        <h6 className="fw-bold kanban-card-title">{lead.title}</h6>
 
-          {/* TÍTULO DA LEAD: Identificação do registo na coluna */}
-          <h6 className="fw-bold mb-1">{lead.title}</h6>
+        {/* DESCRIÇÃO DA LEAD (Truncada via CSS) */}
+        <p className="kanban-card-description">{lead.description}</p>
 
-          <div className="d-flex justify-content-between align-items-end border-top pt-2 mt-2">
-            <div>
-              {/* NOME DO UTILIZADOR: Exibe quem está associado à lead */}
-              <div className="fw-bold" style={{ fontSize: "0.75rem" }}>
-                {lead.firstName} {lead.lastName}
-              </div>
-
-              {/* DATA FORMATADA: Proveniente do Backend para garantir consistência visual */}
-              <div className="text-muted" style={{ fontSize: "0.7rem" }}>
-                {lead.formattedDate}
-              </div>
+        <div className="kanban-card-footer d-flex justify-content-between align-items-end border-top">
+          <div>
+            {/* NOME DO UTILIZADOR */}
+            <div className="kanban-card-author fw-bold text-truncate">
+              {lead.firstName} {lead.lastName}
             </div>
 
-            {/* ACTION GROUP:
-                Componente que gere os botões de ação (Ver, Editar, Apagar).
-                Recebe as 'cardActions' configuradas dinamicamente no hook useResourceActions.
-            */}
-            <ActionGroup
-                actions={cardActions}
-                item={lead}
-                isTrashMode={isTrashMode}
-                isAdmin={isAdmin}
-            />
+            {/* DATA FORMATADA */}
+            <div className="kanban-card-date text-muted">
+              {lead.formattedDate}
+            </div>
           </div>
-        </Card.Body>
-      </Card>
+
+          <ActionGroup
+            actions={cardActions}
+            item={lead}
+            isTrashMode={isTrashMode}
+            isAdmin={isAdmin}
+          />
+        </div>
+      </Card.Body>
+    </Card>
   );
 };
 
