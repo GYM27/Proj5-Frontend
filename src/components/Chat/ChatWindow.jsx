@@ -112,7 +112,7 @@ const ChatWindow = ({ selectedUser, onBack }) => {
   };
  
   return (
-    <div className="d-flex flex-column h-100 bg-white shadow-sm chat-window">
+    <div className="d-flex flex-column h-100 w-100 bg-white shadow-sm chat-window">
       {/* Header */}
       <div className="p-3 border-bottom d-flex align-items-center justify-content-between bg-light-subtle">
         <div className="d-flex align-items-center">
