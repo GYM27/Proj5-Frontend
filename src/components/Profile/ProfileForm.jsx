@@ -11,123 +11,113 @@ import { Form, Row, Col, Button, Spinner } from "react-bootstrap";
  * @param {boolean} isOwnProfile - Define se o formulário é editável (próprio perfil) ou apenas leitura.
  * @param {boolean} loading - Estado de carregamento para feedback visual no botão.
  */
-const ProfileForm = ({ formData, handleChange, handleSubmit, isOwnProfile, loading, hasChanges }) => (
-    <Form onSubmit={handleSubmit}>
-        <Row>
-            {/* CAMPOS DE IDENTIFICAÇÃO:
-          - Usamos o atributo 'disabled={!isOwnProfile}' para garantir que um Administrador
-            não altere dados pessoais de outro utilizador por acidente (Regra de Segurança).
-          - O operador '|| ""' previne erros de 'Controlled Components' caso os dados demorem a carregar.
-      */}
-            <Col md={6}>
-                <Form.Group className="mb-3">
-                    <Form.Label>Nome</Form.Label>
-                    <Form.Control
-                        name="firstName"
-                        value={formData.firstName || ""}
-                        onChange={handleChange}
-                        disabled={!isOwnProfile}
-                        required
-                    />
-                </Form.Group>
-            </Col>
+const ProfileForm = ({ formData, handleChange, handleSubmit, isOwnProfile, isAdmin, loading, hasChanges }) => {
+    // REGRA DE NEGÓCIO: O Admin pode editar outros, mas ninguém edita Username/Password aqui.
+    const canEdit = isOwnProfile || isAdmin;
 
-            <Col md={6}>
-                <Form.Group className="mb-3">
-                    <Form.Label>Apelido</Form.Label>
-                    <Form.Control
-                        name="lastName"
-                        value={formData.lastName || ""}
-                        onChange={handleChange}
-                        disabled={!isOwnProfile}
-                        required
-                    />
-                </Form.Group>
-            </Col>
+    return (
+        <Form onSubmit={handleSubmit}>
+            <Row>
+                <Col md={6}>
+                    <Form.Group className="mb-3">
+                        <Form.Label>Nome</Form.Label>
+                        <Form.Control
+                            name="firstName"
+                            value={formData.firstName || ""}
+                            onChange={handleChange}
+                            disabled={!canEdit}
+                            required
+                        />
+                    </Form.Group>
+                </Col>
 
-            {/* CREDENCIAIS DE ACESSO: Username e Password */}
-            <Col md={6}>
-                <Form.Group className="mb-3">
-                    <Form.Label>Username</Form.Label>
-                    <Form.Control
-                        name="username"
-                        value={formData.username || ""}
-                        onChange={handleChange}
-                        disabled={true} // Username não é editável
-                        readOnly
-                    />
-                </Form.Group>
-            </Col>
+                <Col md={6}>
+                    <Form.Group className="mb-3">
+                        <Form.Label>Apelido</Form.Label>
+                        <Form.Control
+                            name="lastName"
+                            value={formData.lastName || ""}
+                            onChange={handleChange}
+                            disabled={!canEdit}
+                            required
+                        />
+                    </Form.Group>
+                </Col>
 
-            <Col md={6}>
-                <Form.Group className="mb-3">
-                    <Form.Label>Password</Form.Label>
-                    <Form.Control
-                        type="password"
-                        name="password"
-                        value="********" // Valor visual dummy
-                        disabled={true} // Password não editável aqui
-                        readOnly
-                    />
-                    <Form.Text className="text-muted">
-                        Para segurança, a password não pode ser editada aqui.
-                    </Form.Text>
-                </Form.Group>
-            </Col>
-        </Row>
+                <Col md={6}>
+                    <Form.Group className="mb-3">
+                        <Form.Label>Username</Form.Label>
+                        <Form.Control
+                            name="username"
+                            value={formData.username || ""}
+                            disabled={true}
+                            readOnly
+                        />
+                    </Form.Group>
+                </Col>
 
-        {/* CONTACTOS E IDENTIDADE VISUAL */}
-        <Form.Group className="mb-3">
-            <Form.Label>Email</Form.Label>
-            <Form.Control
-                type="email"
-                name="email"
-                value={formData.email || ""}
-                onChange={handleChange}
-                disabled={!isOwnProfile}
-                required
-            />
-        </Form.Group>
+                <Col md={6}>
+                    <Form.Group className="mb-3">
+                        <Form.Label>Password</Form.Label>
+                        <Form.Control
+                            type="password"
+                            name="password"
+                            value="********"
+                            disabled={true}
+                            readOnly
+                        />
+                    </Form.Group>
+                </Col>
+            </Row>
 
-        <Form.Group className="mb-3">
-            <Form.Label>Telemóvel</Form.Label>
-            <Form.Control
-                name="cellphone"
-                value={formData.cellphone || ""}
-                onChange={handleChange}
-                disabled={!isOwnProfile}
-                required
-            />
-        </Form.Group>
+            <Form.Group className="mb-3">
+                <Form.Label>Email</Form.Label>
+                <Form.Control
+                    type="email"
+                    name="email"
+                    value={formData.email || ""}
+                    onChange={handleChange}
+                    disabled={!canEdit}
+                    required
+                />
+            </Form.Group>
 
-        <Form.Group className="mb-4">
-            <Form.Label>URL da Foto</Form.Label>
-            <Form.Control
-                name="photoUrl"
-                value={formData.photoUrl || ""}
-                onChange={handleChange}
-                disabled={!isOwnProfile}
-                placeholder="https://exemplo.com/foto.jpg"
-            />
-        </Form.Group>
+            <Form.Group className="mb-3">
+                <Form.Label>Telemóvel</Form.Label>
+                <Form.Control
+                    name="cellphone"
+                    value={formData.cellphone || ""}
+                    onChange={handleChange}
+                    disabled={!canEdit}
+                    required
+                />
+            </Form.Group>
 
-        {/* RENDERIZAÇÃO CONDICIONAL DO BOTÃO:
-        - O botão de guardar só aparece se o utilizador estiver a ver o seu próprio perfil.
-        - Implementa feedback visual (Spinner) durante a comunicação assíncrona com o servidor.
-    */}
-        {isOwnProfile && (
-            <Button variant="primary" type="submit" className="w-100 fw-bold" disabled={loading || !hasChanges}>
-                {loading ? (
-                    <>
-                        <Spinner size="sm" className="me-2" />
-                        A guardar alterações...
-                    </>
-                ) : (
-                    "Guardar Alterações"
-                )}
-            </Button>
-        )}
-    </Form>
-);
+            <Form.Group className="mb-4">
+                <Form.Label>URL da Foto</Form.Label>
+                <Form.Control
+                    name="photoUrl"
+                    value={formData.photoUrl || ""}
+                    onChange={handleChange}
+                    disabled={!canEdit}
+                    placeholder="https://exemplo.com/foto.jpg"
+                />
+            </Form.Group>
+
+            {canEdit && (
+                <Button variant="primary" type="submit" className="w-100 fw-bold" disabled={loading || !hasChanges}>
+                    {loading ? (
+                        <>
+                            <Spinner size="sm" className="me-2" />
+                            A guardar alterações...
+                        </>
+                    ) : (
+                        "Guardar Alterações"
+                    )}
+                </Button>
+            )}
+        </Form>
+    );
+};
 
 export default ProfileForm;

@@ -14,6 +14,7 @@ import Users from "./pages/Users";
 import Profile from "./pages/Profile";
 import NewClient from "./components/Clients/NewClient";
 import ChatPage from './components/Chat/ChatPage';
+import Notifications from "./pages/Notifications";
 
 function App() {
   const isDevelopment = import.meta.env.DEV;
@@ -40,6 +41,7 @@ function App() {
           <Route path="/clients" element={<Clients />} />
           <Route path="/clients/new" element={<NewClient />} />
           <Route path="/chat" element={<ChatPage />} />
+          <Route path="/notifications" element={<Notifications />} />
         </Route>
       </Routes>
     </BrowserRouter>

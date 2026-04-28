@@ -1,5 +1,5 @@
 import React from "react";
-import { useSearchParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Container, Card, Spinner, Row, Col } from "react-bootstrap";
 import { useUserStore } from "../stores/UserStore";
 import { useHeaderStore } from "../stores/HeaderStore"; // Novo
@@ -23,12 +23,10 @@ import AdminActions from "../components/Profile/AdminActions";
  * DESCRIÇÃO: Página de visualização e gestão de perfis de utilizador.
  */
 const Profile = () => {
-  const [searchParams] = useSearchParams();
-
+  const { username: targetUsername } = useParams();
 
   // LÓGICA DE CONTEXTO:
-  const targetUserId = searchParams.get("userId");
-  const isOwnProfile = !targetUserId;
+  const isOwnProfile = !targetUsername;
 
   const { userRole } = useUserStore();
   const isAdmin = userRole === "ADMIN";
@@ -45,7 +43,7 @@ const Profile = () => {
     handleChange,    
     handleSubmit,     
     hasChanges     // <-- EXTRAÍDO AQUI
-  } = useProfileManager(targetUserId, isOwnProfile);
+  } = useProfileManager(targetUsername, isOwnProfile);
 
   const { setHeader } = useHeaderStore();
 
@@ -95,6 +93,7 @@ const Profile = () => {
                     handleChange={handleChange}
                     handleSubmit={handleSubmit}
                     isOwnProfile={isOwnProfile}
+                    isAdmin={isAdmin}
                     loading={loading}
                     hasChanges={hasChanges} // <-- PASSADO PARA O FORM
                 />

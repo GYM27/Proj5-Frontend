@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Container, Spinner, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "../stores/UserStore";
-import { useHeaderStore } from "../stores/HeaderStore"; // Novo
+import { useHeaderStore } from "../stores/HeaderStore"; 
 import { userService } from "../services/userService";
 
 // Componentes extraídos
@@ -15,7 +15,7 @@ import { useUserActions } from "../components/Users/useUserActions.jsx";
 
 /**
  * Componente responsável pela listagem e gestão de utilizadores.
- * Página de acesso restrito a Administradores.
+ * REQUISITO: Filtro por username ou e-mail (Backend).
  */
 const Users = () => {
     const { userRole } = useUserStore();
@@ -25,17 +25,19 @@ const Users = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState("");
 
     const { setHeader } = useHeaderStore();
     const { modalConfig, openModal, closeModal } = useModalManager();
 
     /**
-     * Carrega a lista completa de utilizadores a partir da API.
+     * Carrega os utilizadores pedindo ao BACKEND para filtrar (Regra do Projeto)
      */
-    const loadUsers = useCallback(async () => {
+    const loadUsers = useCallback(async (searchQuery = "") => {
         try {
             setLoading(true);
-            const data = await userService.getAllUsers();
+            const data = await userService.getAllUsers(searchQuery);
+            // Ordena mantendo os ativos no topo
             const sortedUsers = data.sort((a, b) => (a.softDelete === b.softDelete ? 0 : a.softDelete ? 1 : -1));
             setUsers(sortedUsers);
         } catch (err) {
@@ -45,20 +47,29 @@ const Users = () => {
         }
     }, []);
 
+    // Efeito para carregar inicial e quando o termo de pesquisa muda (Backend Filtering)
     useEffect(() => {
         if (!isAdmin) {
             navigate("/dashboard");
             return;
         }
-        loadUsers();
 
-        // ATUALIZA O CABEÇALHO GLOBAL
+        // Debounce simples para não sobrecarregar o servidor enquanto se digita
+        const delayDebounceFn = setTimeout(() => {
+            loadUsers(searchTerm);
+        }, 300);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [isAdmin, navigate, loadUsers, searchTerm]);
+
+    // Configura o Cabeçalho apenas uma vez no mount
+    useEffect(() => {
         setHeader({
             title: "GESTÃO DE EQUIPA",
             subtitle: "Administração de utilizadores, permissões e estados das contas.",
             showStats: false
         });
-    }, [isAdmin, navigate, loadUsers, setHeader]);
+    }, [setHeader]);
 
     const { executeUserAction } = useUserActions(loadUsers, closeModal);
 
@@ -66,12 +77,7 @@ const Users = () => {
         await executeUserAction(modalConfig.type, data);
     };
 
-    /**
-     * Lógica para o botão "Enviar Convite" no Header.
-     * Abre o modal específico para introduzir o e-mail do novo colaborador.
-     */
     const handleInvite = () => {
-        // "USER_INVITE" deve ser tratado no seu ConfirmActionContent/useUserActions
        openModal("USER_INVITE", "Convidar Novo Colaborador", {});
     };
 
@@ -86,14 +92,17 @@ const Users = () => {
 
     return (
         <div className="users-page">
-            {/* O Header fica fora do Container para ocupar toda a largura e mostrar a borda inferior */}
-            <UsersHeader onInviteClick={handleInvite} />
+            <UsersHeader 
+                onInviteClick={handleInvite} 
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+            />
 
             <Container>
                 {error && <Alert variant="danger">{error}</Alert>}
 
                 <UserGrid
-                    users={users}
+                    users={users} // Passamos a lista vinda do backend
                     onViewProfile={(u) => navigate(`/users/${u.username}`)}
                     onToggleStatus={(u) => openModal("USER_TOGGLE_STATUS", u.softDelete ? "Reativar" : "Desativar", u)}
                     onHardDelete={(u) => openModal("USER_HARD_DELETE", "Ação Irreversível", u)}

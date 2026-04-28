@@ -54,7 +54,7 @@ export const logoutUser = async () => {
 
     try {
         if (token) {
-            /** * 2. INVALIDAÇÃO NO SERVIDOR (BOA PRÁTICA):
+            /** * 2. INVALIDAÇÃO NO SERVIDOR :
              * Chamamos o endpoint de logout para que o Backend possa, opcionalmente,
              * colocar o token numa 'blacklist' ou destruir a sessão no Wildfly.
              */
@@ -73,6 +73,6 @@ export const logoutUser = async () => {
         localStorage.removeItem("userName");
         localStorage.removeItem("userRole");
 
-        // Dica: Após isto, o 'MainLayout.jsx' detetará a falta do token e enviará o user para o Login.
+        // Após isto, o 'MainLayout.jsx' detetará a falta do token e enviará o user para o Login.
     }
 };

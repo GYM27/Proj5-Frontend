@@ -1,3 +1,5 @@
+import { useUserStore } from "../stores/UserStore";
+
 /**
  * Ponto de entrada base da API definido no ApplicationConfig do JAX-RS.
  * Este URL deve coincidir com o @ApplicationPath definido no Java.
@@ -55,6 +57,14 @@ const apiRequest = async (endpoint, method = "GET", body = null) => {
     // 7. TRATAMENTO DE ERROS DO SERVIDOR (EXCEPTION MAPPING):
     // Se a resposta não for 2xx, processamos o ErrorResponse enviado pelo Backend Java.
     if (!response.ok) {
+      // SE O TOKEN EXPIROU (401), EXPULSAMOS O UTILIZADOR IMEDIATAMENTE
+      if (response.status === 401) {
+        console.warn("Sessão expirada (401). A redirecionar para o login...");
+        useUserStore.getState().clearUser();
+        sessionStorage.removeItem("token");
+        throw new Error("Sessão expirada. Por favor, faça login novamente.");
+      }
+
       const errorData = await response.json();
       // Propaga a mensagem de erro específica definida nas Exceptions do Java.
       throw new Error(

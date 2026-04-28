@@ -1,14 +1,32 @@
 import React from 'react';
 
 const ContactList = ({ users, onSelectUser, selectedUserId, allMessages = [], myUsername }) => {
+    
+    // 1. Lógica de Ordenação: Encontra a última interação com cada utilizador
+    const sortedUsers = [...users].sort((a, b) => {
+        const lastMsgA = allMessages
+            .filter(m => (m.sender === a.username && m.recipient === myUsername) || (m.sender === myUsername && m.recipient === a.username))
+            .reduce((max, m) => Math.max(max, m.timestamp || 0), 0);
+            
+        const lastMsgB = allMessages
+            .filter(m => (m.sender === b.username && m.recipient === myUsername) || (m.sender === myUsername && m.recipient === b.username))
+            .reduce((max, m) => Math.max(max, m.timestamp || 0), 0);
+
+        // Critério 1: Quem falou mais recentemente fica no topo
+        if (lastMsgA !== lastMsgB) return lastMsgB - lastMsgA;
+        
+        // Critério 2: Ordem alfabética se não houver mensagens
+        return (a.firstName || a.username).localeCompare(b.firstName || b.username);
+    });
+
     return (
         <div className="flex-grow-1 overflow-auto" style={{ height: 'calc(100vh - 130px)' }}>
             <div className="list-group list-group-flush">
-                {users.length === 0 ? (
+                {sortedUsers.length === 0 ? (
                     <div className="p-4 text-center text-muted small">Nenhum contacto encontrado.</div>
                 ) : (
-                    users.map((user) => {
-                        // Calcula quantas mensagens não lidas este utilizador enviou para mim
+                    sortedUsers.map((user) => {
+                        // Calcula notificações para este utilizador específico
                         const unreadCount = allMessages.filter(
                             m => m.sender === user.username && m.recipient === myUsername && !m.read
                         ).length;
@@ -23,10 +41,23 @@ const ContactList = ({ users, onSelectUser, selectedUserId, allMessages = [], my
                             >
                                 <div className="d-flex align-items-center justify-content-between">
                                     <div className="d-flex align-items-center overflow-hidden">
-                                        {/* Avatar com iniciais */}
-                                        <div className="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" 
-                                             style={{ width: '48px', height: '48px', fontSize: '1rem', fontWeight: 'bold' }}>
-                                            {user.firstName?.[0] || user.username?.[0] || '?'}{user.lastName?.[0] || ''}
+                                        <div className="rounded-circle overflow-hidden flex-shrink-0 shadow-sm d-flex align-items-center justify-content-center bg-light border" 
+                                             style={{ width: '48px', height: '48px' }}>
+                                            {user.photoUrl ? (
+                                                <img 
+                                                    src={user.photoUrl} 
+                                                    alt={user.username} 
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                    onError={(e) => {
+                                                        e.target.onerror = null; 
+                                                        e.target.src = "https://ui-avatars.com/api/?name=" + (user.firstName || user.username) + "&background=random";
+                                                    }}
+                                                />
+                                            ) : (
+                                                <span className="fw-bold text-secondary" style={{ fontSize: '1rem' }}>
+                                                    {user.firstName?.[0] || user.username?.[0] || '?'}{user.lastName?.[0] || ''}
+                                                </span>
+                                            )}
                                         </div>
                                         
                                         <div className="ms-3 overflow-hidden">
@@ -42,7 +73,6 @@ const ContactList = ({ users, onSelectUser, selectedUserId, allMessages = [], my
                                         </div>
                                     </div>
 
-                                    {/* Bolinha de Notificação */}
                                     {unreadCount > 0 && (
                                         <span className="badge rounded-pill bg-danger shadow-sm bounce-in">
                                             {unreadCount}

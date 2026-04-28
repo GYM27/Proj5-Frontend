@@ -16,7 +16,7 @@ export const useWebSocket = () => {
         websocket.current = new WebSocket(`${WS_BASE_URL}/${token}`);
 
         websocket.current.onopen = () => {
-            console.log("WebSocket: Conectado. O PC validou o token e mapeou o userId.");
+            console.log("WebSocket: Conectado. Token validado e mapeou o userId.");
         };
 
         websocket.current.onmessage = (event) => {

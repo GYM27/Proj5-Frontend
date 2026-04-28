@@ -136,10 +136,7 @@ const Clients = () => {
                     <EditClientForm
                         clientData={modalConfig.data}
                         onSuccess={() => {
-                            clientStore.fetchClients(userRole, {
-                                userId: filters.userId || null,
-                                showTrash: isTrashMode,
-                            });
+                            // A store já atualizou o cliente localmente, não fazemos fetch redundante
                             closeModal();
                         }}
                         onCancel={closeModal}

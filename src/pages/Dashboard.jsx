@@ -167,7 +167,7 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* FUNIL DE VENDAS (VISUAL): Agora disponível para todos */}
+        {/* FUNIL DE VENDAS (VISUAL)*/}
         <div className="row g-4 mb-4">
           <div className="col-md-7">
             <div className="card p-4 border-0 shadow-sm bg-white h-100" style={{ borderRadius: '15px' }}>
@@ -252,7 +252,7 @@ const Dashboard = () => {
           
           <div className="col-md-8">
             <div className="card p-3 border-0 shadow-sm bg-white h-100" style={{ borderRadius: '15px' }}>
-              <h6 className="fw-bold mb-3 px-2">Fluxo de Clientes e Novas leads ({userRole === "ADMIN" ? "Empresa" : "Individual"})</h6>
+              <h6 className="fw-bold mb-3 px-2">Fluxo de Clientes e Novas leads </h6>
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={finalChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />

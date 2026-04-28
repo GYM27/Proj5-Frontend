@@ -13,7 +13,7 @@ export const useClientStore = create((set, get) => ({
   loading: false,
   error: null,
 
-  // PERSISTÊNCIA DE CONTEXTO (OPTIMIZAÇÃO - 5%):
+  // PERSISTÊNCIA DE CONTEXTO :
   // Guardamos o role e os filtros atuais para permitir 'refetch' automáticos
   // após ações de CRUD, mantendo a lista sempre atualizada com os critérios certos.
   _currentUserRole: null,
@@ -54,14 +54,17 @@ export const useClientStore = create((set, get) => ({
   addClient: async (clientData, targetUserId = null) => {
     set({ loading: true, error: null });
     try {
+      let newClient;
       if (targetUserId) {
-        // ADMIN: Delegação de cliente para um utilizador específico via API.
-        await clientsService.createClientForUser(targetUserId, clientData);
+        newClient = await clientsService.createClientForUser(targetUserId, clientData);
       } else {
-        // USER: Criação associada ao próprio utilizador logado.
-        await clientsService.createClient(clientData);
+        newClient = await clientsService.createClient(clientData);
       }
-      await get()._refetch(); // Sincroniza a UI após sucesso
+      
+      set((state) => ({
+        clients: [newClient, ...state.clients],
+        loading: false
+      }));
       return true;
     } catch (err) {
       set({ error: err.message, loading: false });
@@ -72,11 +75,15 @@ export const useClientStore = create((set, get) => ({
   updateClient: async (id, clientDto) => {
     set({ loading: true });
     try {
-      await clientsService.updateClient(id, clientDto);
-      await get()._refetch();
+      const updatedClient = await clientsService.updateClient(id, clientDto);
+      
+      set((state) => ({
+        clients: state.clients.map((c) => (c.id === id ? updatedClient : c)),
+        loading: false
+      }));
       return true;
     } catch (err) {
-      set({ error: err.message });
+      set({ error: err.message, loading: false });
       return false;
     }
   },
@@ -87,16 +94,18 @@ export const useClientStore = create((set, get) => ({
     set({ loading: true });
     try {
       if (isPermanent) {
-        // REGRA A14: Hard Delete definitivo no PostgreSQL.
         await clientsService.permanentDeleteClient(id);
       } else {
-        // REGRA A9: Soft Delete (movido para a lixeira).
         await clientsService.softDeleteClient(id);
       }
-      await get()._refetch();
+      
+      set((state) => ({
+        clients: state.clients.filter((c) => c.id !== id),
+        loading: false
+      }));
       return true;
     } catch (err) {
-      set({ error: err.message });
+      set({ error: err.message, loading: false });
       return false;
     }
   },
@@ -105,18 +114,18 @@ export const useClientStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       await clientsService.restoreClient(id);
-      await get()._refetch();
+      
+      set((state) => ({
+        clients: state.clients.filter((c) => c.id !== id),
+        loading: false
+      }));
       return true;
     } catch (error) {
-      console.error('❌ [RESTORE] Erro:', error.message);
       set({ error: error.message, loading: false });
       return false;
     }
   },
 
-  /** * AÇÕES EM MASSA (BULK ACTIONS - ADMIN):
-   * Executa operações de alta escala (Restaurar Tudo, Desativar Tudo, Esvaziar Lixeira).
-   */
   handleBulkAction: async (
       userId,
       actionType,
@@ -124,9 +133,7 @@ export const useClientStore = create((set, get) => ({
       currentFilters,
   ) => {
     if (!userId) return false;
-
-    // Limpa a lista local para dar feedback visual imediato de "processamento"
-    set({ loading: true, clients: [] });
+    set({ loading: true });
 
     try {
       switch (actionType) {
@@ -143,15 +150,7 @@ export const useClientStore = create((set, get) => ({
           break;
       }
 
-      /** * TIMEOUT TÉCNICO (ROBUSTEZ):
-       * Garantimos 300ms de espera para que a transação no Wildfly/PostgreSQL
-       * esteja 100% persistida antes de pedirmos a nova lista.
-       */
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
-      // Recarrega a lista com os filtros originais
-      await get().fetchClients(currentUserRole, { ...currentFilters });
-
+      set({ clients: [], loading: false });
       return true;
     } catch (err) {
       set({ error: err.message, loading: false });

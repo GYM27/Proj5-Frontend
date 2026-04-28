@@ -14,40 +14,41 @@ export const useLeadStore = create((set, get) => ({
   error: null,
   viewingUserName: "",
 
-  _processLeads: (data) => data.map((lead) => {
-    let finalDate = "Sem data";
+  _processLeads: (data) =>
+    data.map((lead) => {
+      let finalDate = "Sem data";
 
-    if (lead.date) {
-      let tempDate;
-      if (Array.isArray(lead.date)) {
-        const [year, month, day] = lead.date;
-        tempDate = new Date(year, month - 1, day);
-      } else {
-        tempDate = new Date(lead.date);
-      }
-
-      if (!isNaN(tempDate.getTime())) {
-        const today = new Date();
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-
-        if (tempDate.toDateString() === today.toDateString()) {
-          finalDate = "Hoje";
-        } else if (tempDate.toDateString() === yesterday.toDateString()) {
-          finalDate = "Ontem";
+      if (lead.date) {
+        let tempDate;
+        if (Array.isArray(lead.date)) {
+          const [year, month, day] = lead.date;
+          tempDate = new Date(year, month - 1, day);
         } else {
-          // PADRÃO ISO8601 (YYYY-MM-DD)
-          finalDate = tempDate.toISOString().split('T')[0];
+          tempDate = new Date(lead.date);
+        }
+
+        if (!isNaN(tempDate.getTime())) {
+          const today = new Date();
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+
+          if (tempDate.toDateString() === today.toDateString()) {
+            finalDate = "Hoje";
+          } else if (tempDate.toDateString() === yesterday.toDateString()) {
+            finalDate = "Ontem";
+          } else {
+            // PADRÃO ISO8601 (YYYY-MM-DD)
+            finalDate = tempDate.toISOString().split("T")[0];
+          }
         }
       }
-    }
 
-    return {
-      ...lead,
-      state: lead.state ? parseInt(lead.state, 10) : 1,
-      formattedDate: finalDate
-    };
-  }),
+      return {
+        ...lead,
+        state: lead.state ? parseInt(lead.state, 10) : 1,
+        formattedDate: finalDate,
+      };
+    }),
 
   /** * ACÇÃO: fetchMyLeads
    * Procura as leads na API e aplica a transformação de dados antes de guardar no estado.
@@ -180,11 +181,13 @@ export const useLeadStore = create((set, get) => ({
           set({ loading: false });
           return false;
       }
-      // REFETCH (CONSISTÊNCIA): Após uma ação em massa, a store obriga a
-      // uma nova leitura da base de dados para garantir integridade total.
-      await get().fetchMyLeads(currentUserRole, currentFilters);
+      // ATUALIZAÇÃO LOCAL (OTIMIZAÇÃO): 
+      // Em vez de pedir tudo ao servidor, limpamos localmente o que foi alterado.
+      set((state) => ({
+        leads: [],
+        loading: false
+      }));
 
-      set({ loading: false });
       return true;
     } catch (err) {
       set({ error: err.message, loading: false });

@@ -24,7 +24,7 @@ export const registerUser = async (registerData) => {
      */
     const response = await api("/users/register", "POST", registerData);
 
-    /** * 2. RETORNO ESTRUTURADO (UX - 3%):
+    /** * 2. RETORNO ESTRUTURADO :
      * Devolvemos um objeto de sucesso que o componente 'Register.jsx'
      * utiliza para confirmar a operação e navegar para o Login.
      */
@@ -35,7 +35,7 @@ export const registerUser = async (registerData) => {
     };
 
   } catch (error) {
-    /** * 3. PROPAGAÇÃO DE EXCEPÇÕES (SEGURANÇA - 2%):
+    /** * 3. PROPAGAÇÃO DE EXCEPÇÕES :
      * Captura erros de validação do Hibernate ou do SQL (ex: 409 Conflict se
      * o username ou email já estiverem em uso na base de dados).
      */
