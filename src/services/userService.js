@@ -53,5 +53,9 @@ export const userService = {
 
     deleteUserPermanent: async (id) => {
         return await api(`/users/${id}`, "DELETE");
+    },
+
+    getStatsForUser: async (id) => {
+        return await api(`/dashboard/stats?userId=${id}`, "GET");
     }
 };

@@ -76,7 +76,7 @@ function Login() {
       // das APIs para autorizar todos os pedidos subsequentes.
       sessionStorage.setItem("token", data.token);
 
-      // 3. ATUALIZAÇÃO DA STORE (ZUSTAND - 5%):
+      // 3. ATUALIZAÇÃO DA STORE:
       // O 'data' injeta firstName e userRole na Store, permitindo que a Sidebar
       // e o Header se adaptem imediatamente às permissões do utilizador.
       setUser(data);

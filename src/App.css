@@ -115,6 +115,18 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+/* OTIMIZAÇÃO PARA TOQUE (TOUCH TARGETS) */
+@media (max-width: 767px) {
+  .btn-sm, .btn-icon, i.bi {
+    min-width: 32px;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px !important; /* Aumenta a área clicável sem mudar muito o visual */
+  }
+}
+
 .user-dropdown-custom .dropdown-toggle::after {
   display: none;
 }

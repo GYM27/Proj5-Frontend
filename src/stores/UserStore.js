@@ -23,6 +23,14 @@ export const useUserStore = create(
 
             messages: [],    // Armazena mensagens de chat recebidas via WebSocket.
             unreadCount: 0, // Contador de mensagens não lidas para notificações.
+            users: [],      // Lista global de utilizadores para o chat
+            locale: "pt",   // Idioma da interface (conforme tutorial)
+
+            setUsers: (usersList) => set({ users: usersList }),
+            
+            updateOnlineStatus: (userId, online) => set(({users}) => ({
+                users: users.map(u => u.id === userId ? { ...u, online } : u)
+            })),
 
             /** * ACÇÃO: setUser
              * DESCRIÇÃO: Popula a store com os dados validados pelo Backend.
@@ -35,8 +43,12 @@ export const useUserStore = create(
                 email: userData.email,
                 userRole: userData.userRole,
                 photoUrl: userData.photoUrl || "",
+                locale: userData.language || "pt", // Sincroniza com a preferência do DB
                 isAuthenticated: true
             }),
+
+            /** Atualiza o idioma da interface (com fallback de segurança) */
+            updateLocale: (newLocale) => set({ locale: newLocale || "pt" }),
 
             // ACÇÃO: setPhotoUrl (UPDATE PARCIAL):
             // Permite atualizar a imagem de perfil sem necessidade de um novo login.
@@ -57,6 +69,25 @@ export const useUserStore = create(
 
             /** Substitui a lista de mensagens pelo histórico do backend */
             setMessages: (history) => set({ messages: history }),
+
+            /** 
+             * Marca mensagens locais como lidas.
+             * Pode ser usado para mim próprio (ao abrir o chat) ou via confirmação de leitura do outro.
+             */
+            markLocalMessagesAsRead: (readerUsername, senderUsername) => set(({messages}) => {
+                const updatedMessages = messages.map(m => 
+                    (m.sender === senderUsername && m.recipient === readerUsername) 
+                    ? { ...m, read: true } 
+                    : m
+                );
+                // Recalcula o total de não lidas para o utilizador atual (eu)
+                const newUnreadCount = updatedMessages.filter(m => m.recipient === readerUsername && !m.read).length;
+                
+                return { 
+                    messages: updatedMessages,
+                    unreadCount: newUnreadCount
+                };
+            }),
 
             /** Incrementa o contador de notificações (bolinha vermelha no Header) */
             incrementUnread: () => set(({unreadCount}) => ({
@@ -85,7 +116,7 @@ export const useUserStore = create(
                 unreadCount: 0
             }),
         }),
-        /** * CONFIGURAÇÃO DE PERSISTÊNCIA (SEGURANÇA - 2%):
+        /** * CONFIGURAÇÃO DE PERSISTÊNCIA :
          * 'name': Chave única no armazenamento do browser.
          * 'storage': Utilizamos sessionStorage para que os dados expirem
          * automaticamente quando o utilizador fecha o separador/browser.

@@ -12,10 +12,10 @@ import { useProfileManager } from "../components/Profile/useProfileManager.jsx";
 import DynamicModal from "../Modal/DynamicModal.jsx";
 import ConfirmActionContent from "../Modal/ConfirmActionContent.jsx";
 
-// COMPONENTES DE PERFIL
 import ProfilePhoto from "../components/Profile/ProfilePhoto";
 import ProfileForm from "../components/Profile/ProfileForm";
 import AdminActions from "../components/Profile/AdminActions";
+import ProfileStats from "../components/Profile/ProfileStats";
 
 /**
  * COMPONENTE: Profile
@@ -26,9 +26,12 @@ const Profile = () => {
   const { username: targetUsername } = useParams();
 
   // LÓGICA DE CONTEXTO:
-  const isOwnProfile = !targetUsername;
+  const { userRole, username: currentUsername } = useUserStore();
+  
+  // Se não houver targetUsername na URL, é o /profile.
+  // Se houver, verificamos se bate certo com o nosso username na sessão.
+  const isOwnProfile = !targetUsername || targetUsername === currentUsername;
 
-  const { userRole } = useUserStore();
   const isAdmin = userRole === "ADMIN";
 
   // ✨ A MÁGICA ACONTECE AQUI:
@@ -42,7 +45,8 @@ const Profile = () => {
     handleConfirmAction,
     handleChange,    
     handleSubmit,     
-    hasChanges     // <-- EXTRAÍDO AQUI
+    hasChanges,
+    stats
   } = useProfileManager(targetUsername, isOwnProfile);
 
   const { setHeader } = useHeaderStore();
@@ -87,6 +91,11 @@ const Profile = () => {
 
               <Card.Body className="p-4 p-md-5">
 
+                {/* ESTATÍSTICAS DO UTILIZADOR */}
+                <ProfileStats stats={stats} />
+                
+                <hr className="my-4 text-light-subtle" />
+
                 {/* FORMULÁRIO: Recebe as funções que extraímos no topo */}
                 <ProfileForm
                     formData={formData}
@@ -95,7 +104,8 @@ const Profile = () => {
                     isOwnProfile={isOwnProfile}
                     isAdmin={isAdmin}
                     loading={loading}
-                    hasChanges={hasChanges} // <-- PASSADO PARA O FORM
+                    hasChanges={hasChanges} 
+                    openModal={openModal} // <-- PASSADO AQUI
                 />
 
                 {/* PAINEL DE ADMINISTRAÇÃO: "Danger Zone" */}

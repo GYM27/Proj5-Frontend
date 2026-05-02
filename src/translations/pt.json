@@ -1,0 +1,17 @@
+{
+  "common.welcome": "Olá {name}",
+  "common.logout": "Sair",
+  "dashboard.title": "Dashboard",
+  "dashboard.subtitle": "O seu resumo de vendas de hoje",
+  "dashboard.admin_subtitle": "Painel de Administração Global",
+  "dashboard.conversion_rate": "Taxa de Conversão",
+  "dashboard.total_leads": "Total de Oportunidades",
+  "dashboard.total_clients": "Carteira de Clientes",
+  "profile.firstName": "Nome",
+  "profile.lastName": "Apelido",
+  "profile.change_password": "Mudar Password",
+  "profile.language": "Idioma",
+  "profile.saving": "A guardar alterações...",
+  "profile.save": "Guardar Alterações",
+  "error.generic": "Ocorreu um erro inesperado."
+}

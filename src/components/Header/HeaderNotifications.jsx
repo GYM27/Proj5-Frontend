@@ -58,7 +58,10 @@ const NotificationIcon = () => {
     return (
         <Dropdown show={show} onToggle={(nextShow) => {
             setShow(nextShow);
-            if (nextShow) fetchNotifications();
+            if (nextShow) {
+                fetchNotifications();
+                handleMarkAllAsRead();
+            }
         }} align="end">
             
             <Dropdown.Toggle as="div" className="position-relative p-2" style={{ cursor: "pointer" }}>

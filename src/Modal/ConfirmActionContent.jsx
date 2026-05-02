@@ -47,6 +47,45 @@ const ConfirmActionContent = ({ type, data, onCancel, onConfirm }) => {
         );
     }
 
+    if (type === "CHANGE_PASSWORD") {
+        return (
+            <div className="p-3 text-start">
+                <div className="mb-4">
+                    <label className="form-label small fw-bold text-uppercase">Password Atual</label>
+                    <input type="password" id="oldPass" className="form-control" placeholder="Introduza a password atual" />
+                </div>
+                <div className="mb-3">
+                    <label className="form-label small fw-bold text-uppercase">Nova Password</label>
+                    <input type="password" id="newPass" className="form-control" placeholder="Nova password" />
+                </div>
+                <div className="mb-4">
+                    <label className="form-label small fw-bold text-uppercase">Confirmar Nova Password</label>
+                    <input type="password" id="confirmPass" className="form-control" placeholder="Repita a nova password" />
+                </div>
+                <div className="d-flex justify-content-end gap-2 mt-4">
+                    <Button variant="outline-secondary" onClick={onCancel}>Cancelar</Button>
+                    <Button variant="primary" onClick={() => {
+                        const oldP = document.getElementById('oldPass').value;
+                        const newP = document.getElementById('newPass').value;
+                        const confP = document.getElementById('confirmPass').value;
+                        
+                        if (!oldP || !newP || !confP) {
+                            alert("Por favor, preencha todos os campos.");
+                            return;
+                        }
+                        if (newP !== confP) {
+                            alert("As passwords novas não coincidem.");
+                            return;
+                        }
+                        onConfirm({ currentPassword: oldP, password: newP });
+                    }}>
+                        <i className="bi bi-shield-check me-2"></i> Atualizar Password
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
     /**
      * DICIONÁRIO DE CONFIGURAÇÃO (PATTERN: STRATEGY / FACTORY):
      * Em vez de múltiplos IFs espalhados, usamos um Switch para mapear

@@ -7,7 +7,7 @@ import { Card, Button, Badge } from "react-bootstrap";
  * DESCRIÇÃO: Representa um utilizador do sistema na lista de gestão de staff.
  * REQUISITOS: Mostra Username, Fotografia e E-mail.
  */
-const UserCard = ({ user, onToggleStatus, onHardDelete, onViewProfile }) => {
+const UserCard = ({ user, isCurrentUser, onToggleStatus, onHardDelete, onViewProfile }) => {
   const isInactive = user.softDelete;
 
   return (
@@ -74,30 +74,34 @@ const UserCard = ({ user, onToggleStatus, onHardDelete, onViewProfile }) => {
             <i className="bi bi-person-vcard" style={{ fontSize: "0.9rem" }}></i>
           </Button>
 
-          <Button
-            variant={isInactive ? "outline-success" : "outline-warning"}
-            size="sm"
-            className="rounded-circle d-flex align-items-center justify-content-center"
-            style={{ width: "32px", height: "32px" }}
-            title={isInactive ? "Reativar" : "Desativar"}
-            onClick={() => onToggleStatus(user)}
-          >
-            <i
-              className={`bi ${isInactive ? "bi-arrow-counterclockwise" : "bi-ban"}`}
-              style={{ fontSize: "0.9rem" }}
-            ></i>
-          </Button>
+          {!isCurrentUser && (
+            <>
+              <Button
+                variant={isInactive ? "outline-success" : "outline-warning"}
+                size="sm"
+                className="rounded-circle d-flex align-items-center justify-content-center"
+                style={{ width: "32px", height: "32px" }}
+                title={isInactive ? "Reativar" : "Desativar"}
+                onClick={() => onToggleStatus(user)}
+              >
+                <i
+                  className={`bi ${isInactive ? "bi-arrow-counterclockwise" : "bi-ban"}`}
+                  style={{ fontSize: "0.9rem" }}
+                ></i>
+              </Button>
 
-          <Button
-            variant="outline-danger"
-            size="sm"
-            className="rounded-circle d-flex align-items-center justify-content-center"
-            style={{ width: "32px", height: "32px" }}
-            title="Eliminar Permanente"
-            onClick={() => onHardDelete(user)}
-          >
-            <i className="bi bi-trash3" style={{ fontSize: "0.9rem" }}></i>
-          </Button>
+              <Button
+                variant="outline-danger"
+                size="sm"
+                className="rounded-circle d-flex align-items-center justify-content-center"
+                style={{ width: "32px", height: "32px" }}
+                title="Eliminar Permanente"
+                onClick={() => onHardDelete(user)}
+              >
+                <i className="bi bi-trash3" style={{ fontSize: "0.9rem" }}></i>
+              </Button>
+            </>
+          )}
         </div>
       </Card.Body>
     </Card>

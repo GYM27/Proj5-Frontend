@@ -18,7 +18,7 @@ import { useUserActions } from "../components/Users/useUserActions.jsx";
  * REQUISITO: Filtro por username ou e-mail (Backend).
  */
 const Users = () => {
-    const { userRole } = useUserStore();
+    const { userRole, username: currentUsername } = useUserStore();
     const isAdmin = userRole === "ADMIN";
     const navigate = useNavigate();
 
@@ -103,6 +103,7 @@ const Users = () => {
 
                 <UserGrid
                     users={users} // Passamos a lista vinda do backend
+                    currentUsername={currentUsername}
                     onViewProfile={(u) => navigate(`/users/${u.username}`)}
                     onToggleStatus={(u) => openModal("USER_TOGGLE_STATUS", u.softDelete ? "Reativar" : "Desativar", u)}
                     onHardDelete={(u) => openModal("USER_HARD_DELETE", "Ação Irreversível", u)}

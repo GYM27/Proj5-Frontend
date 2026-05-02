@@ -15,36 +15,43 @@ import Profile from "./pages/Profile";
 import NewClient from "./components/Clients/NewClient";
 import ChatPage from './components/Chat/ChatPage';
 import Notifications from "./pages/Notifications";
+import { IntlProvider } from "react-intl";
+import languages from "./translations";
+import { useUserStore } from "./stores/UserStore";
 
 function App() {
   const isDevelopment = import.meta.env.DEV;
 
-  return (
-    <BrowserRouter basename={isDevelopment ? "/" : "/LuisF-proj5"}>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        {/* Rotas Públicas (Sem Header/Sidebar) */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+  const { locale } = useUserStore();
 
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/leads" element={<LeadsKanban />} />
-          <Route path="/leads/new" element={<NewLeads />} />
-          <Route path="/leads/edit/:id" element={<EditLeadForm />} />
-          <Route path="/leads/:id" element={<LeadDetails />} />
-          <Route path="/users" element={<Users />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/users/:username" element={<Profile />} />
-          <Route path="/clients" element={<Clients />} />
-          <Route path="/clients/new" element={<NewClient />} />
-          <Route path="/chat" element={<ChatPage />} />
-          <Route path="/notifications" element={<Notifications />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+  return (
+    <IntlProvider locale={locale} messages={languages[locale]}>
+      <BrowserRouter basename={isDevelopment ? "/" : "/LuisF-proj5"}>
+        <Routes>
+          <Route path="/" element={<Login />} />
+          {/* Rotas Públicas (Sem Header/Sidebar) */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+
+          <Route element={<MainLayout />}>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/leads" element={<LeadsKanban />} />
+            <Route path="/leads/new" element={<NewLeads />} />
+            <Route path="/leads/edit/:id" element={<EditLeadForm />} />
+            <Route path="/leads/:id" element={<LeadDetails />} />
+            <Route path="/users" element={<Users />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/users/:username" element={<Profile />} />
+            <Route path="/clients" element={<Clients />} />
+            <Route path="/clients/new" element={<NewClient />} />
+            <Route path="/chat" element={<ChatPage />} />
+            <Route path="/notifications" element={<Notifications />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </IntlProvider>
   );
 }
 

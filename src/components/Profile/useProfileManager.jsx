@@ -15,9 +15,11 @@ export const useProfileManager = (targetUsername, isOwnProfile) => {
 
   const setPhotoUrl = useUserStore((state) => state.setPhotoUrl);
   const setNames = useUserStore((state) => state.setNames);
+  const updateLocale = useUserStore((state) => state.updateLocale);
 
   const [formData, setFormData] = useState({});
   const [originalData, setOriginalData] = useState({});
+  const [stats, setStats] = useState(null); // Novo estado para as estatísticas
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,6 +30,19 @@ export const useProfileManager = (targetUsername, isOwnProfile) => {
           : await userService.getUserByUsername(targetUsername);
         setFormData(data);
         setOriginalData(data); 
+
+        // Buscar estatísticas do utilizador
+        if (data && data.id) {
+          try {
+            // Usamos o serviço de Dashboard importando a API genérica (ou podíamos adicionar ao userService)
+            // Assumindo que userService tem um api() exportado ou algo similar.
+            // Para ser seguro, vou importar api do ficheiro correto.
+            const statsData = await userService.getStatsForUser(data.id);
+            setStats(statsData);
+          } catch (e) {
+            console.warn("Não foi possível carregar as estatísticas:", e);
+          }
+        }
       } catch (err) {
         console.error("Erro ao carregar dados do perfil:", err);
       } finally {
@@ -47,11 +62,18 @@ export const useProfileManager = (targetUsername, isOwnProfile) => {
     formData.lastName !== originalData.lastName ||
     formData.email !== originalData.email ||
     formData.cellphone !== originalData.cellphone ||
-    formData.photoUrl !== originalData.photoUrl;
+    formData.photoUrl !== originalData.photoUrl ||
+    formData.language !== originalData.language;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!hasChanges) return;
+    
+    // Validação de confirmação de password
+    if (formData.password && formData.password !== formData.confirmPassword) {
+      alert("A nova password e a confirmação não coincidem!");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -59,8 +81,9 @@ export const useProfileManager = (targetUsername, isOwnProfile) => {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
-        cellphone: formData.cellphone,
-        photoUrl: formData.photoUrl
+        cellphone: formData.cellphone || "", // Garante que não vai null
+        photoUrl: formData.photoUrl || "",
+        language: formData.language || "pt"
       };
 
       if (isOwnProfile) {
@@ -68,15 +91,19 @@ export const useProfileManager = (targetUsername, isOwnProfile) => {
         // Atualiza o Header global apenas se for o meu perfil
         setPhotoUrl(formData.photoUrl);
         setNames(formData.firstName, formData.lastName);
+        updateLocale(formData.language || "pt"); // Muda o idioma da UI na hora!
       } else {
         // Admin atualiza outro utilizador pelo ID
         await userService.updateUserProfile(formData.id, payload);
       }
 
       setOriginalData(formData);
+      // Limpar campos de password após sucesso
+      setFormData(prev => ({ ...prev, password: "", currentPassword: "", confirmPassword: "" }));
       alert("Perfil atualizado com sucesso!");
     } catch (err) {
-      alert("Erro ao guardar o perfil: " + err.message);
+      console.error("ERRO DETALHADO NA ATUALIZAÇÃO:", err);
+      alert("Erro ao guardar o perfil: " + (err.message || "Erro desconhecido"));
     } finally {
       setLoading(false);
     }
@@ -96,6 +123,16 @@ export const useProfileManager = (targetUsername, isOwnProfile) => {
           closeModal();
           window.location.reload();
         },
+        CHANGE_PASSWORD: async () => {
+          // data aqui contém { currentPassword, password } enviados pelo modal
+          await userService.updateMyProfile({
+            ...formData, // Mantemos os dados atuais
+            password: data.password,
+            currentPassword: data.currentPassword
+          });
+          closeModal();
+          alert("Password alterada com sucesso!");
+        }
       };
 
       if (actionMap[modalConfig.type]) {
@@ -116,5 +153,6 @@ export const useProfileManager = (targetUsername, isOwnProfile) => {
     handleChange,
     handleSubmit,
     hasChanges,
+    stats, // Retornamos as estatísticas
   };
 };

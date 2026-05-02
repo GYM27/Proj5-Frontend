@@ -30,7 +30,7 @@ const AdminActions = ({ isDeleted, onToggleStatus, onHardDelete }) => {
         ></i>
         {isDeleted
           ? "Reativar Utilizador"
-          : "Desativar Utilizador (Soft Delete)"}
+          : "Desativar Utilizador"}
       </Button>
 
       {/* BOTÃO ELIMINAR PERMANENTE (REGRA A14):
@@ -39,7 +39,7 @@ const AdminActions = ({ isDeleted, onToggleStatus, onHardDelete }) => {
             */}
       <Button variant="danger" className="mt-2" onClick={onHardDelete}>
         <i className="bi bi-trash3 me-2"></i>
-        Eliminar Utilizador Permanente
+        Eliminar Utilizador
       </Button>
     </div>
   );

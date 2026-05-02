@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Outlet, Navigate } from "react-router-dom";
+import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { useUserStore } from "../stores/UserStore"; // Importante para a reatividade
 import Sidebar from "../components/Shared/Sidebar.jsx";
 import Header from "../components/Shared/Header.jsx";
@@ -47,6 +47,15 @@ const MainLayout = () => {
 
   const [isOpen, setIsOpen] = useState(true);
   const toggleSidebar = () => setIsOpen(!isOpen);
+
+  const location = useLocation();
+  
+  // FECHO AUTOMÁTICO DA SIDEBAR EM MOBILE AO NAVEGAR
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      setIsOpen(false);
+    }
+  }, [location.pathname]); // Dispara sempre que o URL muda
 
   useEffect(() => {
     const handleResize = () => {

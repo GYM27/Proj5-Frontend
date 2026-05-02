@@ -8,7 +8,7 @@ import UserCard from "./UserCard";
  * DESCRIÇÃO: Responsável apenas por renderizar a grelha de utilizadores.
  * Recebe os dados e as funções de clique através de Props.
  */
-const UserGrid = ({ users, onViewProfile, onToggleStatus, onHardDelete }) => {
+const UserGrid = ({ users, currentUsername, onViewProfile, onToggleStatus, onHardDelete }) => {
     // ESTADO VAZIO: Se não houver dados, mostra a mensagem visual
     if (users.length === 0) {
         return (
@@ -28,6 +28,7 @@ const UserGrid = ({ users, onViewProfile, onToggleStatus, onHardDelete }) => {
                 <Col key={user.id} xs={12} sm={6} md={4} lg={3}>
                     <UserCard
                         user={user}
+                        isCurrentUser={currentUsername === user.username}
                         onViewProfile={onViewProfile}
                         onToggleStatus={onToggleStatus}
                         onHardDelete={onHardDelete}

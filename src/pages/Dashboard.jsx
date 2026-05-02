@@ -1,19 +1,27 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "../stores/UserStore";
-import { useHeaderStore } from "../stores/HeaderStore"; // Usar a Store do cabeçalho
+import { useHeaderStore } from "../stores/HeaderStore";
 import api from "../services/api";
+import { Form } from "react-bootstrap";
 import "../App.css";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 /**
- * O meu "Centro de Comando". 
- * É aqui que monitorizo a saúde do negócio. 
- * O código adapta-se: se eu for Admin, vejo a empresa toda; 
- * se for Vendedor, foco-me apenas nos meus números.
+ * DASHBOARD - Centro de Comando Bridge CRM
+ * ---------------------------------------
+ * Monitorização global de Leads, Clientes e Equipa.
  */
 const Dashboard = () => {
-  // ESTADO DOS INDICADORES: Inicializados a zero para garantir uma UI limpa durante o fetch.
   const [stats, setStats] = useState({
     novos: 0,
     analise: 0,
@@ -24,281 +32,450 @@ const Dashboard = () => {
     clientes: 0,
     totalUsers: 0,
     confirmedUsers: 0,
+    inactiveUsers: 0,
     growthData: [],
     leadsGrowthData: [],
+    usersGrowthData: [],
+    topPerformers: [],
     meusLeads: 0,
     meusClientes: 0,
   });
 
+  const [users, setUsers] = useState([]); // Lista para o filtro de Admin
+  const [selectedUserId, setSelectedUserId] = useState(""); // ID do utilizador filtrado
+
   const navigate = useNavigate();
-
-  // CONTEXTO DO UTILIZADOR (REATIVIDADE):
-  // Extraímos os dados da Store. O componente irá reagir automaticamente
-  // assim que o 'userRole' for preenchido após o Login.
   const { userRole, isAuthenticated, firstName } = useUserStore();
+  const { setHeader } = useHeaderStore();
 
-  /**
-   * LÓGICA DE DADOS DINÂMICA (REGRA DE NEGÓCIO - 5%):
-   * Esta função carrega os dados dependendo da sessão do utilizador.
-   */
-  const fetchDashboardData = useCallback(async () => {
+  // Carregar lista de utilizadores para o filtro (Só Admin)
+  useEffect(() => {
+    if (userRole === "ADMIN") {
+      api("/users")
+        .then(data => {
+          // Validação defensiva: garantir que data é uma lista
+          if (Array.isArray(data)) {
+            const activeOnly = data.filter(u => u.state === "ACTIVE" || !u.state); 
+            setUsers(activeOnly);
+          }
+        })
+        .catch(err => console.error("Erro ao carregar utilizadores:", err));
+    }
+  }, [userRole]);
+
+  const fetchDashboardData = useCallback(async (userId = "") => {
     if (!userRole) return;
-
     try {
-      // Usa o novo endpoint que já retorna as estatísticas agregadas
-      const statsData = await api("/dashboard/stats");
-
-      // PROCESSAMENTO: Atribui diretamente os valores agregados pelo backend
+      const url = userId ? `/dashboard/stats?userId=${userId}` : "/dashboard/stats";
+      const statsData = await api(url);
       setStats({
-        novos: statsData.novos || 0,
-        analise: statsData.analise || 0,
-        propostas: statsData.propostas || 0,
-        ganhos: statsData.ganhos || 0,
-        perdidos: statsData.perdidos || 0,
-        leads: statsData.leads || 0,
-        clientes: statsData.clientes || 0,
-        totalUsers: statsData.totalUsers || 0,
-        confirmedUsers: statsData.confirmedUsers || 0,
+        ...statsData,
         growthData: statsData.growthData || [],
         leadsGrowthData: statsData.leadsGrowthData || [],
-        meusLeads: statsData.meusLeads || 0,
-        meusClientes: statsData.meusClientes || 0,
+        usersGrowthData: statsData.usersGrowthData || [],
+        topPerformers: statsData.topPerformers || [],
       });
     } catch (error) {
       console.error("Erro no Dashboard:", error.message);
-
-      /**
-       * GESTÃO DE SESSÃO EXPIRADA (SEGURANÇA - 2%):
-       * Se o token falhar (401), limpamos o sessionStorage e expulsamos para o Login.
-       */
-      if (error.message.includes("401") || error.message.includes("Sessão")) {
+      if (error.message.includes("401")) {
         sessionStorage.clear();
         navigate("/login");
       }
     }
   }, [navigate, userRole]);
 
-  const { setHeader } = useHeaderStore();
-
-  /**
-   * CICLO DE VIDA E SINCRONIZAÇÃO:
-   * O Dashboard "acorda" assim que o utilizador está autenticado.
-   */
   useEffect(() => {
-    let isMounted = true;
-
-    // DEFINE O CABEÇALHO NO LAYOUT UNIFICADO
+    const targetUser = users.find(u => u.id == selectedUserId);
     setHeader({
       title: `Olá, ${firstName || "Utilizador"}`,
-      subtitle: userRole === "ADMIN" ? "Painel de Administração Global" : "O seu resumo de vendas de hoje",
-      showStats: false
+      subtitle:
+        userRole === "ADMIN"
+          ? (selectedUserId && targetUser ? `A visualizar: ${targetUser.firstName} ${targetUser.lastName}` : "Painel de Administração Global")
+          : "O seu resumo de vendas de hoje",
+      showStats: false,
     });
+    if (isAuthenticated) fetchDashboardData(selectedUserId);
+  }, [fetchDashboardData, isAuthenticated, firstName, userRole, setHeader, selectedUserId, users]);
 
-    if (isMounted && isAuthenticated) {
-      fetchDashboardData();
-    }
+  // Taxa de Conversão
+  const conversionRate =
+    stats.leads > 0 ? ((stats.ganhos / stats.leads) * 100).toFixed(1) : 0;
 
-    return () => { isMounted = false; };
-  }, [fetchDashboardData, isAuthenticated, firstName, userRole, setHeader]);
-
-  const pieData = [
-    { name: 'Novos', value: stats.novos, color: '#0d6efd' },
-    { name: 'Análise', value: stats.analise, color: '#6610f2' },
-    { name: 'Propostas', value: stats.propostas, color: '#fd7e14' },
-    { name: 'Ganhos', value: stats.ganhos, color: '#198754' },
-    { name: 'Perdidos', value: stats.perdidos, color: '#dc3545' },
-  ];
-
-  // CÁLCULO DE TAXA DE CONVERSÃO (Leads Totais vs Ganhos)
-  const conversionRate = stats.leads > 0 
-    ? ((stats.ganhos / stats.leads) * 100).toFixed(1) 
-    : 0;
-
-  // PROCESSAMENTO DOS DADOS PARA OS GRÁFICOS (MERGE DE LEADS E CLIENTES - 12 MESES)
-  const mergedChartData = () => {
-    // Gera os últimos 12 meses para garantir que o gráfico está completo
+  // Fusão de dados para o gráfico temporal
+  const finalChartData = (() => {
     const months = [];
     for (let i = 11; i >= 0; i--) {
       const d = new Date();
       d.setMonth(d.getMonth() - i);
-      months.push(d.toISOString().substring(0, 7)); // YYYY-MM
+      months.push(d.toISOString().substring(0, 7));
     }
 
-    return months.map(month => ({
+    return months.map((month) => ({
       name: month,
-      leads: stats.leadsGrowthData.find(d => d.date === month)?.count || 0,
-      clientes: stats.growthData.find(d => d.date === month)?.count || 0
+      leads: stats.leadsGrowthData.find((d) => d.date === month)?.count || 0,
+      clientes: stats.growthData.find((d) => d.date === month)?.count || 0,
+      users: stats.usersGrowthData?.find((d) => d.date === month)?.count || 0,
     }));
-  };
+  })();
 
-  const finalChartData = mergedChartData();
-
-  // FORMATADOR DE DATA PARA O EIXO X (Jan 24, Fev 24, etc.)
   const formatMonth = (isoMonth) => {
-    if (isoMonth === 'Sem Dados') return isoMonth;
-    const [year, month] = isoMonth.split('-');
+    const [year, month] = isoMonth.split("-");
     const date = new Date(year, month - 1);
-    return date.toLocaleDateString('pt-PT', { month: 'short', year: '2-digit' });
+    return date.toLocaleDateString("pt-PT", {
+      month: "short",
+      year: "2-digit",
+    });
   };
 
   return (
-      <div className="container-fluid mb-5">
-        {/* O CABEÇALHO FOI MOVIDO PARA O MAINLAYOUT PARA EVITAR DESLOCAÇÕES */}
-
-        {/* FUNIL DE VENDAS: Cards clicáveis que aplicam filtros na navegação */}
-        <div className="row g-3 mb-4 justify-content-center">
-          {[
-            { label: "Novos Leads", count: stats.novos, color: "#e0ecff", stateId: 1 },
-            { label: "Em Análise", count: stats.analise, color: "#e0ecff", stateId: 2 },
-            { label: "Propostas", count: stats.propostas, color: "#e0ecff", stateId: 3 },
-            { label: "Ganhos", count: stats.ganhos, color: "#d4edda", stateId: 4 },
-            { label: "Perdidos", count: stats.perdidos, color: "#f8d7da", stateId: 5 },
-          ].map((item, index) => (
-              <div key={index} className="col-md-2 col-sm-4 col-6">
-                <div
-                    className="card text-center p-3 border-0 shadow-sm h-100 kpi-card"
-                    style={{ backgroundColor: item.color, cursor: "pointer" }}
-                    onClick={() => navigate(`/leads?state=${item.stateId}`)}
+    <div className="container-fluid mb-5">
+      {/* FILTRO DE UTILIZADOR (SÓ ADMIN) */}
+      {userRole === "ADMIN" && (
+        <div className="row mb-4">
+          <div className="col-md-4 col-lg-3">
+            <div className="card p-3 border-0 shadow-sm bg-white" style={{ borderRadius: "12px" }}>
+              <Form.Group>
+                <Form.Label className="small fw-bold text-uppercase text-muted mb-2">Visualizar Dashboard de:</Form.Label>
+                <Form.Select 
+                  value={selectedUserId} 
+                  onChange={(e) => setSelectedUserId(e.target.value)}
+                  className="border-0 bg-light fw-bold"
+                  style={{ borderRadius: "8px", cursor: "pointer" }}
                 >
-                  <div className="small fw-bold opacity-75">{item.label}</div>
-                  <div className="display-6 fw-bold">{item.count}</div>
-                </div>
-              </div>
-          ))}
-        </div>
-
-        {/* FUNIL DE VENDAS (VISUAL)*/}
-        <div className="row g-4 mb-4">
-          <div className="col-md-7">
-            <div className="card p-4 border-0 shadow-sm bg-white h-100" style={{ borderRadius: '15px' }}>
-              <h5 className="fw-bold mb-4">O Meu Funil de Vendas</h5>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={pieData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                  <YAxis axisLine={false} tickLine={false} />
-                  <Tooltip cursor={{fill: '#f8f9fa'}} contentStyle={{borderRadius: '10px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
-                  <Bar dataKey="value" radius={[5, 5, 0, 0]}>
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+                  <option value="">Visão Global (Equipa)</option>
+                  {users.map(u => (
+                    <option key={u.id} value={u.id}>
+                      👤 {u.firstName} {u.lastName} ({u.username})
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
             </div>
           </div>
-          <div className="col-md-5">
-            <div className="row g-3">
-              <div className="col-12">
-                <div
-                    className="card p-4 border-0 shadow-sm bg-white"
-                    style={{ cursor: "pointer", borderLeft: "5px solid #6366f1", borderRadius: '12px' }}
-                    onClick={() => navigate("/leads")}
+          {selectedUserId && (
+            <div className="col-md-8 col-lg-9 d-flex align-items-center">
+              <div className="alert alert-info border-0 shadow-sm mb-0 w-100 py-2 rounded-3">
+                <i className="bi bi-info-circle-fill me-2"></i>
+                Está a visualizar o desempenho individual de <strong>{users.find(u => u.id == selectedUserId)?.firstName}</strong>.
+                <button 
+                  className="btn btn-link btn-sm text-info fw-bold text-decoration-none ms-2"
+                  onClick={() => setSelectedUserId("")}
                 >
-                  <div className="small fw-bold text-uppercase text-muted mb-1">Total de Oportunidades</div>
-                  <div className="h2 fw-bold text-indigo">{stats.leads}</div>
-                </div>
-              </div>
-              <div className="col-12">
-                <div
-                    className="card p-4 border-0 shadow-sm bg-white"
-                    style={{ cursor: "pointer", borderLeft: "5px solid #10b981", borderRadius: '12px' }}
-                    onClick={() => navigate("/clients")}
-                >
-                  <div className="small fw-bold text-uppercase text-muted mb-1">Total de Clientes</div>
-                  <div className="h2 fw-bold text-success">{stats.clientes}</div>
-                </div>
+                  Limpar Filtro
+                </button>
               </div>
             </div>
-          </div>
+          )}
         </div>
+      )}
 
-        {/* PERFORMANCE E GRÁFICOS (Visível para Todos - Filtrado por Role no Backend) */}
-        <h4 className="mt-5 mb-4">{userRole === "ADMIN" ? "Visão Global" : "A Minha Performance"}</h4>
-        <div className="row g-4 mb-5">
-          <div className="col-md-4">
-            <div className="card text-center p-4 border-0 shadow-sm bg-white h-100" style={{ borderLeft: "5px solid #06b6d4", borderRadius: '12px' }}>
-              <div className="d-flex justify-content-between align-items-start mb-2">
-                <div className="small fw-bold text-uppercase text-muted">Eficiência de Vendas</div>
-                <i className="bi bi-info-circle text-muted" title={userRole === "ADMIN" ? "Taxa global de conversão da empresa" : "A sua taxa pessoal de conversão"}></i>
-              </div>
-              
-              <div className="h2 fw-bold mb-1" style={{ color: conversionRate > 30 ? '#10b981' : conversionRate > 15 ? '#f59e0b' : '#ef4444' }}>
-                {conversionRate}%
-              </div>
-              
-              <div className="small text-muted mb-3">
-                <strong>{stats.ganhos}</strong> ganhos de <strong>{stats.leads}</strong> leads
-              </div>
-
-              {/* BARRA DE PROGRESSO VISUAL */}
-              <div className="progress" style={{ height: '8px', borderRadius: '4px', backgroundColor: '#f1f5f9' }}>
-                <div 
-                  className="progress-bar" 
-                  role="progressbar" 
-                  style={{ 
-                    width: `${conversionRate}%`, 
-                    backgroundColor: conversionRate > 30 ? '#10b981' : conversionRate > 15 ? '#f59e0b' : '#ef4444',
-                    transition: 'width 1s ease-in-out'
-                  }}
-                  aria-valuenow={conversionRate} 
-                  aria-valuemin="0" 
-                  aria-valuemax="100"
-                ></div>
-              </div>
-              <div className="mt-2" style={{ fontSize: '0.7rem', color: '#64748b' }}>Taxa de Conversão {userRole === "ADMIN" ? "Global" : "Pessoal"}</div>
+      {/* KPI CARDS (FUNIL) */}
+      <div className="row g-3 mb-4 justify-content-center">
+        {[
+          {
+            label: "Novos Leads",
+            count: stats.novos,
+            color: "#5793f4",
+            stateId: 1,
+          },
+          {
+            label: "Em Análise",
+            count: stats.analise,
+            color: "#f0f2d3",
+            stateId: 2,
+          },
+          {
+            label: "Propostas",
+            count: stats.propostas,
+            color: "#e0ecff",
+            stateId: 3,
+          },
+          {
+            label: "Ganhos",
+            count: stats.ganhos,
+            color: "#d4edda",
+            stateId: 4,
+          },
+          {
+            label: "Perdidos",
+            count: stats.perdidos,
+            color: "#f8d7da",
+            stateId: 5,
+          },
+        ].map((item, index) => (
+          <div key={index} className="col-md-2 col-sm-4 col-6">
+            <div
+              className="card text-center p-3 border-0 shadow-sm h-100 kpi-card"
+              style={{ backgroundColor: item.color, cursor: "pointer" }}
+              onClick={() => navigate(`/leads?state=${item.stateId}`)}
+            >
+              <div className="small fw-bold opacity-75">{item.label}</div>
+              <div className="display-6 fw-bold">{item.count}</div>
             </div>
           </div>
-          
-          <div className="col-md-8">
-            <div className="card p-3 border-0 shadow-sm bg-white h-100" style={{ borderRadius: '15px' }}>
-              <h6 className="fw-bold mb-3 px-2">Fluxo de Clientes e Novas leads </h6>
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={finalChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                  <XAxis 
-                    dataKey="name" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    fontSize={10} 
-                    tickFormatter={formatMonth} 
-                  />
-                  <YAxis axisLine={false} tickLine={false} fontSize={10} />
-                  <Tooltip 
-                    labelFormatter={formatMonth}
-                    cursor={{fill: '#f8f9fa'}}
-                    contentStyle={{borderRadius: '10px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} 
-                  />
-                  <Legend verticalAlign="top" align="right" iconType="circle" height={36}/>
-                  <Bar name="Leads Novas" dataKey="leads" fill="#0d6efd" radius={[4, 4, 0, 0]} barSize={20} />
-                  <Bar name="Clientes Ganhos" dataKey="clientes" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        {/* SECÇÃO EXCLUSIVA DE ADMIN: Stats de Gestão de Utilizadores */}
-        {userRole === "ADMIN" && (
-          <>
-            <h5 className="mb-4 fw-bold text-muted">Gestão de Equipa</h5>
-            <div className="row g-4 mb-5">
-              <div className="col-md-3">
-                <div className="card text-center p-4 border-0 shadow-sm bg-white h-100" style={{ borderLeft: "5px solid #6f42c1", borderRadius: '12px', cursor: "pointer" }} onClick={() => navigate("/users")}>
-                  <div className="small fw-bold text-uppercase text-muted mb-1">Total Utilizadores</div>
-                  <div className="h3 fw-bold text-purple">{stats.totalUsers}</div>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="card text-center p-4 border-0 shadow-sm bg-white h-100" style={{ borderLeft: "5px solid #6366f1", borderRadius: '12px' }}>
-                  <div className="small fw-bold text-uppercase text-muted mb-1">Utilizadores Ativos</div>
-                  <div className="h3 fw-bold text-indigo">{stats.confirmedUsers}</div>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
+        ))}
       </div>
+
+      {/* MÉTRICAS SECUNDÁRIAS */}
+      <div className="row g-4 mb-4">
+        <div className="col-md-4">
+          <div
+            className="card p-4 border-0 shadow-sm bg-white h-100 text-center"
+            style={{ borderRadius: "15px" }}
+          >
+            <h6
+              className="text-muted text-uppercase fw-bold mb-3"
+              style={{ fontSize: "0.8rem" }}
+            >
+              Eficiência de Vendas
+            </h6>
+            <div
+              className="h2 fw-bold mb-1"
+              style={{ color: conversionRate > 30 ? "#10b981" : "#f59e0b" }}
+            >
+              {conversionRate}%
+            </div>
+            <div className="small text-muted mb-3">Taxa de Conversão</div>
+            <div
+              className="progress"
+              style={{ height: "8px", borderRadius: "4px" }}
+            >
+              <div
+                className="progress-bar"
+                style={{
+                  width: `${conversionRate}%`,
+                  backgroundColor: "#10b981",
+                }}
+              ></div>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-4">
+          <div
+            className="card p-4 border-0 shadow-sm bg-white h-100 text-center"
+            style={{ borderRadius: "15px", cursor: "pointer" }}
+            onClick={() => navigate("/leads")}
+          >
+            <h6
+              className="text-muted text-uppercase fw-bold mb-3"
+              style={{ fontSize: "0.8rem" }}
+            >
+              Total de Leads
+            </h6>
+            <div className="h2 fw-bold text-primary">{stats.leads}</div>
+            <div className="small text-muted">Leads em curso</div>
+          </div>
+        </div>
+        <div className="col-md-4">
+          <div
+            className="card p-4 border-0 shadow-sm bg-white h-100 text-center"
+            style={{ borderRadius: "15px", cursor: "pointer" }}
+            onClick={() => navigate("/clients")}
+          >
+            <h6
+              className="text-muted text-uppercase fw-bold mb-3"
+              style={{ fontSize: "0.8rem" }}
+            >
+              Carteira de Clientes
+            </h6>
+            <div className="h2 fw-bold text-success">{stats.clientes}</div>
+            <div className="small text-muted">Contas ativas</div>
+          </div>
+        </div>
+      </div>
+
+      {/* GRÁFICO DE CRESCIMENTO */}
+      <div className="row mb-5">
+        <div className="col-12">
+          <div
+            className="card p-4 border-0 shadow-sm bg-white"
+            style={{ borderRadius: "15px" }}
+          >
+            <h5 className="fw-bold mb-4 px-2">
+              Crescimento Temporal da Atividade
+            </h5>
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart
+                data={finalChartData}
+                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#f0f0f0"
+                />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={formatMonth}
+                  fontSize={12}
+                />
+                <YAxis axisLine={false} tickLine={false} fontSize={12} />
+                <Tooltip
+                  labelFormatter={formatMonth}
+                  contentStyle={{
+                    borderRadius: "12px",
+                    border: "none",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                  }}
+                />
+                <Legend
+                  verticalAlign="top"
+                  align="right"
+                  height={40}
+                  iconType="circle"
+                />
+                <Bar
+                  name="Leads"
+                  dataKey="leads"
+                  fill="#0d6efd"
+                  radius={[4, 4, 0, 0]}
+                  barSize={25}
+                />
+                <Bar
+                  name="Clientes"
+                  dataKey="clientes"
+                  fill="#10b981"
+                  radius={[4, 4, 0, 0]}
+                  barSize={25}
+                />
+                {userRole === "ADMIN" && (
+                  <Bar
+                    name="Equipa (Total)"
+                    dataKey="users"
+                    fill="#6f42c1"
+                    radius={[4, 4, 0, 0]}
+                    barSize={25}
+                  />
+                )}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* NOVO: GRÁFICO DE TOP PERFORMERS (SÓ ADMIN, VISÃO GLOBAL) */}
+      {userRole === "ADMIN" && !selectedUserId && stats.topPerformers && stats.topPerformers.length > 0 && (
+        <div className="row mb-5">
+          <div className="col-12">
+            <div
+              className="card p-4 border-0 shadow-sm bg-white"
+              style={{ borderRadius: "15px" }}
+            >
+              <h5 className="fw-bold mb-4 px-2 d-flex align-items-center">
+                <i className="bi bi-trophy-fill text-warning me-2"></i>
+                Top 10 Utilizadores (Taxa de Conversão)
+              </h5>
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart
+                  data={stats.topPerformers.map(p => ({
+                    ...p,
+                    // Arredondar a taxa para ficar mais limpo
+                    conversionRate: parseFloat(p.conversionRate.toFixed(1))
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f0f0f0" />
+                  <XAxis type="category" dataKey="username" axisLine={false} tickLine={false} fontSize={13} fontWeight="bold" />
+                  <YAxis type="number" hide />
+                  <Tooltip 
+                    cursor={{fill: 'transparent'}}
+                    contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}
+                    formatter={(value, name) => {
+                      if (name === "conversionRate") return [`${value}%`, "Taxa de Conversão"];
+                      if (name === "totalLeads") return [value, "Total de Leads"];
+                      return [value, name];
+                    }}
+                  />
+                  <Bar dataKey="conversionRate" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={40} label={{ position: 'top', formatter: (val) => `${val}%`, fill: '#6c757d', fontSize: 12, fontWeight: 'bold' }} />
+                  {/* Incluímos o totalLeads apenas para estar disponível no Tooltip escondido das barras principais */}
+                  <Bar dataKey="totalLeads" fill="transparent" barSize={0} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GESTÃO DE EQUIPA (SÓ ADMIN) */}
+      {userRole === "ADMIN" && (
+        <>
+          <h5 className="mb-4 fw-bold text-muted">Gestão de Utilizadores</h5>
+          <div className="row g-4">
+            <div className="col-md-4">
+              <div
+                className="card p-3 border-0 shadow-sm bg-white"
+                style={{
+                  borderRadius: "12px",
+                  borderLeft: "4px solid #6f42c1",
+                  cursor: "pointer",
+                }}
+                onClick={() => navigate("/users")}
+              >
+                <div className="d-flex align-items-center gap-3">
+                  <div className="bg-light p-3 rounded-circle">
+                    <i className="bi bi-people-fill text-purple fs-4"></i>
+                  </div>
+                  <div>
+                    <div className="small text-muted fw-bold">
+                      Total utilizadores
+                    </div>
+                    <div className="h4 mb-0 fw-bold">{stats.totalUsers} </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div
+                className="card p-3 border-0 shadow-sm bg-white"
+                style={{
+                  borderRadius: "12px",
+                  borderLeft: "4px solid #10b981",
+                }}
+              >
+                <div className="d-flex align-items-center gap-3">
+                  <div className="bg-light p-3 rounded-circle">
+                    <i className="bi bi-person-check-fill text-success fs-4"></i>
+                  </div>
+                  <div>
+                    <div className="small text-muted fw-bold">
+                      Utilizadores ativos
+                    </div>
+                    <div className="h4 mb-0 fw-bold text-success">
+                      {stats.confirmedUsers} Ativos
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div
+                className="card p-3 border-0 shadow-sm bg-white"
+                style={{
+                  borderRadius: "12px",
+                  borderLeft: "4px solid #dc3545ff", 
+                }}
+              >
+                <div className="d-flex align-items-center gap-3">
+                  <div className="bg-light p-3 rounded-circle">
+                    <i className="bi bi-person-x-fill text-danger fs-4"></i>
+                  </div>
+                  <div>
+                    <div className="small text-muted fw-bold">
+                      Utilizadores inativos
+                    </div>
+                    <div className="h4 mb-0 fw-bold text-danger">
+                      {stats.inactiveUsers} Inativos
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
   );
 };
 

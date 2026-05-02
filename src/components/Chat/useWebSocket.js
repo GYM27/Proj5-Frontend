@@ -38,6 +38,16 @@ export const useWebSocket = () => {
                         console.log("Dashboard reativo:", data.content);
                         // No futuro, podes disparar um fetch aqui para atualizar gráficos
                         break;
+                    
+                    case "STATUS_UPDATE":
+                        console.log("Status update received:", data);
+                        useUserStore.getState().updateOnlineStatus(data.userId, data.online);
+                        break;
+
+                    case "READ_CONFIRMATION":
+                        console.log("Read confirmation received:", data);
+                        useUserStore.getState().markLocalMessagesAsRead(data.reader, data.sender);
+                        break;
 
                     default:
                         console.warn("Evento recebido mas não processado:", data.type);
