@@ -10,7 +10,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
  */
 export const useUserStore = create(
     persist(
-        (set) => ({
+        (set, get) => ({
             // 1. ESTADO INICIAL :
             // Mapeia os campos essenciais do LoginResponseDTO vindo do Java.
             username: "",
@@ -72,16 +72,36 @@ export const useUserStore = create(
 
             /** 
              * Marca mensagens locais como lidas.
-             * Pode ser usado para mim próprio (ao abrir o chat) ou via confirmação de leitura do outro.
+             * CORREÇÃO: Comparação insensível a maiúsculas/minúsculas para evitar falhas de atualização.
              */
-            markLocalMessagesAsRead: (readerUsername, senderUsername) => set(({messages}) => {
-                const updatedMessages = messages.map(m => 
-                    (m.sender === senderUsername && m.recipient === readerUsername) 
-                    ? { ...m, read: true } 
-                    : m
-                );
-                // Recalcula o total de não lidas para o utilizador atual (eu)
-                const newUnreadCount = updatedMessages.filter(m => m.recipient === readerUsername && !m.read).length;
+            markLocalMessagesAsRead: (readerUsername, senderUsername) => set((state) => {
+                if (!readerUsername || !senderUsername) return state;
+
+                const currentUsername = state.username?.toLowerCase().trim();
+                const rUser = readerUsername.toLowerCase().trim();
+                const sUser = senderUsername.toLowerCase().trim();
+                
+                let wasUpdated = false;
+                const updatedMessages = state.messages.map(m => {
+                    const mSender = m.sender?.toLowerCase().trim();
+                    const mRecipient = m.recipient?.toLowerCase().trim();
+
+                    if (mSender === sUser && mRecipient === rUser && !m.read) {
+                        wasUpdated = true;
+                        return { ...m, read: true };
+                    }
+                    return m;
+                });
+
+                if (!wasUpdated) return state;
+
+                // O unreadCount só deve ser recalculado se EU for o leitor.
+                let newUnreadCount = state.unreadCount;
+                if (rUser === currentUsername) {
+                    newUnreadCount = updatedMessages.filter(m => 
+                        m.recipient?.toLowerCase().trim() === currentUsername && !m.read
+                    ).length;
+                }
                 
                 return { 
                     messages: updatedMessages,
