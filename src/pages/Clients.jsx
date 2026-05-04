@@ -64,10 +64,12 @@ const Clients = () => {
         const selectedUser = users.find((u) => String(u.id) === String(filters.userId));
         const displayName = selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : intl.formatMessage({ id: "forms.everyone" });
 
+        const subtitleKey = isAdmin ? "clients.subtitle_admin" : "clients.subtitle_user";
+
         setHeader({
             title: intl.formatMessage({ id: isTrashMode ? "clients.trash_title" : "clients.title" }),
             subtitle: intl.formatMessage(
-                { id: "clients.subtitle" },
+                { id: subtitleKey },
                 { count: clientStore.clients.length, responsible: displayName }
             ),
             isTrash: isTrashMode,

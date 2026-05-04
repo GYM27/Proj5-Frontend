@@ -33,7 +33,7 @@
   "login.recover_desc": "Enter the email associated with your account. If the email exists, we will send a recovery link.",
   "login.recover_send": "Send Email",
   "login.recover_sending": "Sending...",
-  
+
   "dashboard.title": "Dashboard",
   "dashboard.subtitle": "Your sales summary for today",
   "dashboard.admin_subtitle": "Global Administration Panel",
@@ -63,7 +63,7 @@
   "dashboard.kpi.proposal": "Proposals",
   "dashboard.kpi.won": "Won",
   "dashboard.kpi.lost": "Lost",
-  
+
   "profile.title": "Profile Settings",
   "profile.firstName": "First Name",
   "profile.lastName": "Last Name",
@@ -75,7 +75,7 @@
   "profile.language": "Language",
   "profile.save": "Save Changes",
   "profile.saving": "Saving...",
-  
+
   "chat.title": "Messages",
   "chat.placeholder": "Select a contact",
   "chat.description": "Select a team colleague from the side list to start chatting in real-time.",
@@ -87,7 +87,8 @@
 
   "leads.title": "LEADS",
   "leads.trash_title": "LEADS TRASH",
-  "leads.subtitle": "Total: {count} records | Responsible: {responsible}",
+  "leads.subtitle_admin": "Total: {count} records | Responsible: {responsible}",
+  "leads.subtitle_user": "Total: {count} records",
   "leads.everyone": "Everyone",
   "leads.admin_general": "GENERAL ADMIN",
   "leads.loading_panel": "Loading panel...",
@@ -119,7 +120,8 @@
 
   "clients.title": "CLIENTS",
   "clients.trash_title": "CLIENTS TRASH",
-  "clients.subtitle": "Total: {count} records | Responsible: {responsible}",
+  "clients.subtitle_admin": "Total: {count} records | Responsible: {responsible}",
+  "clients.subtitle_user": "Total: {count} records",
   "clients.loading": "Loading clients...",
   "clients.empty_trash": "Empty trash or user not selected.",
   "clients.empty_list": "No clients found.",
@@ -153,38 +155,5 @@
   "users.view_profile": "View Profile",
   "users.hard_delete": "Permanent Delete",
   "users.search_placeholder": "Search users",
-  "users.invite": "Invite",
-
-  "modals.invite_desc": "Enter the email address of the new collaborator. They will receive a unique link to complete the registration.",
-  "modals.email_label": "Email Address",
-  "modals.email_placeholder": "example@company.com",
-  "modals.send_invite": "Send Invite",
-  "modals.current_password": "Current Password",
-  "modals.current_password_placeholder": "Enter your current password",
-  "modals.new_password": "New Password",
-  "modals.new_password_placeholder": "New password",
-  "modals.confirm_new_password": "Confirm New Password",
-  "modals.confirm_new_password_placeholder": "Repeat the new password",
-  "modals.error_empty_fields": "Please fill in all fields.",
-  "modals.error_password_mismatch": "The new passwords do not match.",
-  "modals.update_password": "Update Password",
-  "modals.soft_delete_msg": "Are you sure you want to move \"{name}\" to the trash?",
-  "modals.soft_delete_confirm": "Move to Trash",
-  "modals.hard_delete_msg": "Do you want to permanently delete \"{name}\"? This action cannot be undone.",
-  "modals.hard_delete_confirm": "Permanent Delete",
-  "modals.bulk_soft_delete_msg": "Are you sure you want to move all selected items to the trash?",
-  "modals.bulk_soft_delete_confirm": "Move All",
-  "modals.bulk_hard_delete_msg": "Do you want to empty the trash permanently? All items will be lost forever.",
-  "modals.bulk_hard_delete_confirm": "Empty Trash",
-  "modals.user_hard_delete_msg": "You are about to permanently delete the user \"{name}\". Access will be revoked and their data will be reassigned.",
-  "modals.user_hard_delete_confirm": "Delete User",
-  "modals.restore_msg": "Are you sure you want to restore \"{name}\"? It will be active again on the main board.",
-  "modals.restore_confirm": "Yes, Restore",
-  "modals.restore_all_msg": "Are you sure you want to restore ALL visible items in the trash? They will be active again.",
-  "modals.restore_all_confirm": "Yes, Restore All",
-  "modals.user_reactivate_msg": "Do you want to reactivate the account of \"{name}\"? The user will regain access.",
-  "modals.user_reactivate_confirm": "Yes, Reactivate",
-  "modals.user_deactivate_msg": "Do you want to deactivate the account of \"{name}\"? The user will no longer be able to log in.",
-  "modals.user_deactivate_confirm": "Yes, Deactivate",
-  "modals.default_msg": "Are you sure you want to perform this action?"
+  "users.invite": "Invite"
 }

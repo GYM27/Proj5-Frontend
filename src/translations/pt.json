@@ -87,7 +87,8 @@
 
   "leads.title": "LEADS",
   "leads.trash_title": "LIXEIRA",
-  "leads.subtitle": "Total: {count} registos | Responsável: {responsible}",
+  "leads.subtitle_admin": "Total: {count} registos | Responsável: {responsible}",
+  "leads.subtitle_user": "Total: {count} registos",
   "leads.everyone": "Todos",
   "leads.admin_general": "GERAL ADMIN",
   "leads.loading_panel": "A carregar painel...",
@@ -119,7 +120,8 @@
 
   "clients.title": "CLIENTES",
   "clients.trash_title": "LIXEIRA CLIENTES",
-  "clients.subtitle": "Total: {count} registos | Responsável: {responsible}",
+  "clients.subtitle_admin": "Total: {count} registos | Responsável: {responsible}",
+  "clients.subtitle_user": "Total: {count} registos",
   "clients.loading": "A carregar clientes...",
   "clients.empty_trash": "Lixeira vazia ou utilizador não selecionado.",
   "clients.empty_list": "Nenhum cliente encontrado.",

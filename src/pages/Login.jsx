@@ -3,10 +3,11 @@ import { useNavigate, Link } from "react-router-dom";
 import { useUserStore } from "../stores/UserStore";
 import { loginUser } from "../services/loginService.js";
 import {
-  Container, Card, Form, Button, Alert, Row, Col, Modal
+  Container, Card, Form, Button, Alert, Row, Col, Modal, Spinner
 } from "react-bootstrap";
 import { userService } from "../services/userService";
 import { FormattedMessage, useIntl } from "react-intl";
+import logo from "../assets/logo.jpeg";
 
 /**
  * COMPONENTE: Login
@@ -111,26 +112,42 @@ function Login() {
   };
 
   return (
-      <Container className="d-flex justify-content-center align-items-center vh-100">
-        <Row>
-          <Col>
-            {/* Card com sombra e largura fixa para consistência visual */}
-            <Card className="shadow-lg border-0" style={{ width: "22rem" }}>
-              <Card.Body className="p-4">
+    <div className="login-wrapper">
+      <Container className="d-flex justify-content-center align-items-center h-100">
+        <Row className="w-100 justify-content-center">
+          <Col xs={11} sm={9} md={7} lg={5} xl={4} style={{ maxWidth: '450px' }}>
+            {/* Card com Glassmorphism (efeito de vidro fosco) */}
+            <Card className="glass-card border-0">
+              <Card.Body className="p-4 p-md-5">
                 <div className="text-center mb-4">
-                  <h2 className="fw-bold"><FormattedMessage id="login.title" /></h2>
+                  <div className="mb-3 d-flex justify-content-center">
+                    <img 
+                      src={logo} 
+                      alt="Bridge Logo" 
+                      style={{ 
+                        width: '250px', 
+                        height: 'auto', 
+                        objectFit: 'contain' 
+                      }} 
+                    />
+                  </div>
+                  <h2 className="fw-bold mb-0" style={{ color: "#1e2a78", letterSpacing: "-1px" }}>
+                    Bridge.
+                  </h2>
+                  <p className="text-muted small fw-semibold">CRM SOLUTIONS</p>
                 </div>
 
-                {/* FEEDBACK DE ERRO: Alerta dinâmico se a autenticação falhar */}
+                {/* FEEDBACK DE ERRO */}
                 {error && (
-                    <Alert variant="danger" className="py-2 small">
+                    <Alert variant="danger" className="py-2 small border-0 shadow-sm text-center">
+                      <i className="bi bi-exclamation-triangle me-2"></i>
                       {error}
                     </Alert>
                 )}
 
                 <Form onSubmit={handleSubmit}>
                   <Form.Group className="mb-3" controlId="formUsername">
-                    <Form.Label className="fw-bold text-secondary small">
+                    <Form.Label className="fw-bold text-secondary small mb-1 ms-1">
                       <FormattedMessage id="login.username" />
                     </Form.Label>
                     <Form.Control
@@ -141,12 +158,12 @@ function Login() {
                         onChange={handleChange}
                         required
                         disabled={isLoading}
-                        className="py-2"
+                        className="login-input"
                     />
                   </Form.Group>
 
                   <Form.Group className="mb-4" controlId="formPassword">
-                    <Form.Label className="fw-bold text-secondary small">
+                    <Form.Label className="fw-bold text-secondary small mb-1 ms-1">
                       <FormattedMessage id="login.password" />
                     </Form.Label>
                     <Form.Control
@@ -157,19 +174,25 @@ function Login() {
                         onChange={handleChange}
                         required
                         disabled={isLoading}
-                        className="py-2"
+                        className="login-input"
                     />
                   </Form.Group>
 
-                  {/* BOTÃO DE LOGIN: Gerencia o estado de loading para evitar spam de pedidos */}
+                  {/* BOTÃO DE LOGIN COM DESIGN PREMIUM */}
                   <Button
                       variant="primary"
                       type="submit"
                       disabled={isLoading}
-                      className="w-100 py-2 fw-bold"
+                      className="w-100 py-3 fw-bold rounded-pill shadow-sm border-0"
+                      style={{ 
+                        background: "linear-gradient(90deg, #1e2a78 0%, #0d6efd 100%)",
+                        transition: "transform 0.2s"
+                      }}
+                      onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.02)"}
+                      onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
                   >
                     {isLoading
-                      ? <FormattedMessage id="login.loading" />
+                      ? <><Spinner as="span" animation="border" size="sm" className="me-2"/> <FormattedMessage id="login.loading" /></>
                       : <FormattedMessage id="login.submit" />}
                   </Button>
 
@@ -177,7 +200,7 @@ function Login() {
                     <span className="text-muted small"><FormattedMessage id="login.forgot" /> </span>
                     <Button
                       variant="link"
-                      className="text-decoration-none fw-bold small p-0 m-0 align-baseline"
+                      className="text-decoration-none fw-bold small p-0 m-0 align-baseline text-primary"
                       onClick={() => setShowForgotModal(true)}
                     >
                       <FormattedMessage id="login.forgot_link" />
@@ -186,6 +209,11 @@ function Login() {
                 </Form>
               </Card.Body>
             </Card>
+            
+            {/* Rodapé do login com copyright */}
+            <div className="text-center mt-4 text-white-50 small" style={{ animation: "fadeIn 2s ease-in" }}>
+              &copy; {new Date().getFullYear()} Bridge CRM. All rights reserved.
+            </div>
           </Col>
         </Row>
 
@@ -231,6 +259,7 @@ function Login() {
           </Modal.Body>
         </Modal>
       </Container>
+    </div>
   );
 }
 

@@ -94,11 +94,13 @@ const LeadsKanban = () => {
       softDeleted: isTrashMode,
     });
 
+    const subtitleKey = isAdmin ? "leads.subtitle_admin" : "leads.subtitle_user";
+
     // ATUALIZA O CABEÇALHO GLOBAL
     setHeader({
       title: intl.formatMessage({ id: isTrashMode ? "leads.trash_title" : "leads.title" }),
       subtitle: intl.formatMessage(
-          { id: "leads.subtitle" },
+          { id: subtitleKey },
           { count: leads.length, responsible: displayName }
       ),
       isTrash: isTrashMode,

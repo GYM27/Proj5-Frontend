@@ -8,7 +8,8 @@ import React from 'react';
  */
 const GenericHeader = ({ title, subtitle, stats = [], showStats = true, isTrash = false, children }) => {
     return (
-        <div className={`generic-header-unified border-bottom bg-white shadow-sm px-4 py-3 ${isTrash ? 'border-top border-4 border-danger' : ''}`} style={{ minHeight: "100px" }}>
+        <div className={`generic-header-unified border-bottom shadow-sm px-4 py-3 ${isTrash ? 'border-top border-4 border-danger' : ''}`} 
+             style={{ minHeight: "100px", backgroundColor: "#f0f7ff" }}>
             <div className="d-flex justify-content-between align-items-center">
                 {/* LADO ESQUERDO: Identidade da Página */}
                 <div className="header-info">
