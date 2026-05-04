@@ -4,6 +4,7 @@ import { useLeadStore } from "../stores/LeadsStore";
 import { useUserStore } from "../stores/UserStore";
 import { useHeaderStore } from "../stores/HeaderStore"; // Novo
 import { userService } from "../services/userService";
+import { useIntl } from "react-intl";
 
 // Componentes da Pasta Shared
 import { useModalManager } from "../Modal/useModalManager.jsx";
@@ -21,14 +22,15 @@ import EditLeadForm from "../components/Leads/EditLeadForm";
  * Centralizamos os estados do funil de vendas.
  */
 const COLUMNS_DEF = [
-  { id: 1, title: "Novo", color: "#007bff" },
-  { id: 2, title: "Em Análise", color: "#ffc107" },
-  { id: 3, title: "Proposta", color: "#17a2b8" },
-  { id: 4, title: "Ganho", color: "#28a745" },
-  { id: 5, title: "Perdido", color: "#dc3545" },
+  { id: 1, titleKey: "leads.column.new", color: "#007bff" },
+  { id: 2, titleKey: "leads.column.analysis", color: "#ffc107" },
+  { id: 3, titleKey: "leads.column.proposal", color: "#17a2b8" },
+  { id: 4, titleKey: "leads.column.won", color: "#28a745" },
+  { id: 5, titleKey: "leads.column.lost", color: "#dc3545" },
 ];
 
 const LeadsKanban = () => {
+  const intl = useIntl();
   // 1. ESTADOS E STORES (Seletores Atómicos para evitar o loop infinito)
   const leads = useLeadStore((state) => state.leads);
   const loading = useLeadStore((state) => state.loading);
@@ -72,7 +74,7 @@ const LeadsKanban = () => {
   const displayName = isAdmin
     ? selectedUser
       ? `${selectedUser.firstName} ${selectedUser.lastName}`
-      : "GERAL ADMIN"
+      : intl.formatMessage({ id: "leads.admin_general" })
     : currentUserName;
 
   // 4. CARREGAMENTO DE DADOS (Utilizadores para Admin)
@@ -94,8 +96,11 @@ const LeadsKanban = () => {
 
     // ATUALIZA O CABEÇALHO GLOBAL
     setHeader({
-      title: isTrashMode ? "LIXEIRA" : "LEADS",
-      subtitle: `Total: ${leads.length} registos | Responsável: ${displayName}`,
+      title: intl.formatMessage({ id: isTrashMode ? "leads.trash_title" : "leads.title" }),
+      subtitle: intl.formatMessage(
+          { id: "leads.subtitle" },
+          { count: leads.length, responsible: displayName }
+      ),
       isTrash: isTrashMode,
       showStats: false,
     });
@@ -113,7 +118,7 @@ const LeadsKanban = () => {
     return (
       <div className="text-center mt-5">
         <Spinner animation="border" variant="primary" />
-        <p>A carregar painel...</p>
+        <p>{intl.formatMessage({ id: "leads.loading_panel" })}</p>
       </div>
     );
   }
@@ -143,7 +148,7 @@ const LeadsKanban = () => {
         {COLUMNS_DEF.map((col) => (
           <KanbanColumn
             key={col.id}
-            col={col}
+            col={{ ...col, title: intl.formatMessage({ id: col.titleKey }) }}
             leads={leads.filter((l) => l.state === col.id)}
             isTrashMode={isTrashMode}
             isAdmin={isAdmin}

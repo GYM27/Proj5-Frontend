@@ -1,6 +1,7 @@
 import React from "react";
 import { Badge, Button } from "react-bootstrap";
 import LeadCard from "./LeadCard";
+import { useIntl } from "react-intl";
 
 /**
  * COMPONENTE: KanbanColumn
@@ -21,6 +22,7 @@ const KanbanColumn = ({
                         onAddClick,
                         cardActions
                       }) => {
+  const intl = useIntl();
 
   const TITLE_STYLE = { fontSize: "0.85rem", color: "#555" };
   const BADGE_STYLE = { fontSize: "0.7rem" };
@@ -46,7 +48,7 @@ const KanbanColumn = ({
                     variant="link"
                     className="p-0 text-secondary"
                     onClick={() => onAddClick(col.id)}
-                    title="Adicionar Lead neste estado"
+                    title={intl.formatMessage({ id: "leads.add_column_tooltip" })}
                 >
                   <i className="bi bi-plus-circle-fill"></i>
                 </Button>
@@ -81,7 +83,7 @@ const KanbanColumn = ({
           {/* Empty State: Feedback visual caso a coluna esteja vazia */}
           {leads.length === 0 && (
               <div className="text-center py-4 text-muted small opacity-50 border-dashed rounded">
-                Sem leads
+                {intl.formatMessage({ id: "leads.empty_column" })}
               </div>
           )}
         </div>

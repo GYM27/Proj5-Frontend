@@ -4,6 +4,7 @@ import ActionGroup from "../Shared/ActionGroup";
 import ActionButton from "../Shared/ActionButton";
 import HeaderActions from "../Shared/HeaderActions"; // Novo sistema de Portal
 import { BUTTON_TYPES } from "../Shared/buttonConfigs";
+import { useIntl } from "react-intl";
 
 const KanbanHeader = ({
                           displayName,
@@ -16,19 +17,21 @@ const KanbanHeader = ({
                           users,
                           actions,
                       }) => {
+    const intl = useIntl();
+
     return (
         <HeaderActions>
             {/* FILTRO DE RESPONSÁVEL */}
             {isAdmin && (
                 <div className="d-flex align-items-center gap-2 me-2 border-end pe-3">
-                    <span className="fw-bold small text-secondary">Responsável:</span>
+                    <span className="fw-bold small text-secondary">{intl.formatMessage({ id: "forms.filter_responsible" })}</span>
                     <Form.Select
                         size="sm"
                         style={{ width: "180px" }}
                         value={filters.userId}
                         onChange={(e) => setFilters({ ...filters, userId: e.target.value })}
                     >
-                        <option value="">Todos</option>
+                        <option value="">{intl.formatMessage({ id: "forms.all" })}</option>
                         {users.map((u) => (
                             <option key={u.id} value={u.id}>
                                 {u.firstName} {u.lastName}
@@ -58,7 +61,7 @@ const KanbanHeader = ({
             {!isTrashMode && (
                 <ActionButton
                     {...BUTTON_TYPES.ADD}
-                    tooltip="Nova Lead"
+                    tooltip={intl.formatMessage({ id: "leads.create_title" })}
                     onClick={() => actions.openCreate(1)}
                 />
             )}

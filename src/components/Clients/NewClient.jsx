@@ -5,6 +5,7 @@ import { useClientStore } from "../../stores/ClientsStore";
 import { useUserStore } from "../../stores/UserStore";
 import FormContainer from "../Shared/FormContainer";
 import AdminAssignmentField from "../Shared/AdminAssignmentField";
+import { useIntl } from "react-intl";
 
 /**
  * COMPONENTE: NewClient
@@ -22,6 +23,7 @@ const NewClient = () => {
     const { addClient, loading } = useClientStore();
     const userRole = useUserStore((state) => state.userRole);
     const isAdmin = userRole === "ADMIN";
+    const intl = useIntl();
 
     // ESTADO LOCAL: Gerimos os dados do formulário e o ID do gestor alvo (se Admin)
     const [formData, setFormData] = useState({ name: "", email: "", phone: "", organization: "" });
@@ -54,7 +56,7 @@ const NewClient = () => {
              * Recuperamos a mensagem de erro específica capturada pela Store diretamente do servidor Java.
              */
             const errorMessage = useClientStore.getState().error;
-            setLocalError(errorMessage || "Erro ao criar cliente. Verifique os dados.");
+            setLocalError(errorMessage || intl.formatMessage({ id: "clients.save_error" }));
         }
     };
 
@@ -64,7 +66,7 @@ const NewClient = () => {
          * incluindo o título, ícone e estado de 'loading' no botão de submissão.
          */
         <FormContainer
-            title="Novo Cliente"
+            title={intl.formatMessage({ id: "clients.create_title" })}
             icon="bi-person-plus"
             loading={loading}
             onSubmit={handleSubmit}
@@ -80,28 +82,28 @@ const NewClient = () => {
                 isAdmin={isAdmin}
                 value={targetUserId}
                 onChange={setTargetUserId}
-                label="Responsável pelo Cliente"
+                label={intl.formatMessage({ id: "forms.responsible" })}
             />
 
             {/* CAMPOS OBRIGATÓRIOS (*) - Validação nativa do HTML5 com 'required' */}
             <Form.Group className="mb-3">
-                <Form.Label>Nome *</Form.Label>
+                <Form.Label>{intl.formatMessage({ id: "clients.field.name" })} *</Form.Label>
                 <Form.Control name="name" value={formData.name} onChange={handleChange} required />
             </Form.Group>
 
             <Form.Group className="mb-3">
-                <Form.Label>Email *</Form.Label>
+                <Form.Label>{intl.formatMessage({ id: "clients.field.email" })} *</Form.Label>
                 <Form.Control type="email" name="email" value={formData.email} onChange={handleChange} required />
             </Form.Group>
 
             <Form.Group className="mb-3">
-                <Form.Label>Telemóvel *</Form.Label>
+                <Form.Label>{intl.formatMessage({ id: "clients.field.phone" })} *</Form.Label>
                 <Form.Control name="phone" value={formData.phone} onChange={handleChange} required />
             </Form.Group>
 
             {/* Campo Opcional */}
             <Form.Group className="mb-3">
-                <Form.Label>Organização</Form.Label>
+                <Form.Label>{intl.formatMessage({ id: "clients.field.organization" })}</Form.Label>
                 <Form.Control name="organization" value={formData.organization} onChange={handleChange} />
             </Form.Group>
 

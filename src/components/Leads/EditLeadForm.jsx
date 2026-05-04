@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Form, Button, Spinner } from "react-bootstrap";
 import { useLeadStore } from "../../stores/LeadsStore";
 import { useUserStore } from "../../stores/UserStore";
+import { useIntl } from "react-intl";
 
 /**
  * COMPONENTE: EditLeadForm
@@ -15,6 +16,7 @@ const EditLeadForm = ({ leadData: initialData, onSuccess, onCancel }) => {
   // Acedemos às Stores para persistência de dados e verificação de permissões (userRole)
   const { updateLead, loading } = useLeadStore();
   const userRole = useUserStore((state) => state.userRole);
+  const intl = useIntl();
 
   /**
    * ESTADO LOCAL:
@@ -61,7 +63,7 @@ const EditLeadForm = ({ leadData: initialData, onSuccess, onCancel }) => {
       <Form onSubmit={handleSubmit}>
         {/* Título da Lead: Campo obrigatório para identificação rápida no Kanban */}
         <Form.Group className="mb-3">
-          <Form.Label>Título</Form.Label>
+          <Form.Label>{intl.formatMessage({ id: "leads.field.title" })}</Form.Label>
           <Form.Control
               name="title"
               value={leadData.title}
@@ -72,7 +74,7 @@ const EditLeadForm = ({ leadData: initialData, onSuccess, onCancel }) => {
 
         {/* Descrição: Campo de texto longo para detalhes da oportunidade de negócio */}
         <Form.Group className="mb-3">
-          <Form.Label>Descrição</Form.Label>
+          <Form.Label>{intl.formatMessage({ id: "leads.field.description" })}</Form.Label>
           <Form.Control
               as="textarea"
               rows={3}
@@ -87,17 +89,17 @@ const EditLeadForm = ({ leadData: initialData, onSuccess, onCancel }) => {
           Manteve-se a estrutura para garantir compatibilidade com o Kanban.
       */}
         <Form.Group className="mb-4">
-          <Form.Label>Estado</Form.Label>
+          <Form.Label>{intl.formatMessage({ id: "leads.field.state" })}</Form.Label>
           <Form.Select
               name="state"
               value={leadData.state}
               onChange={handleChange}
           >
-            <option value={1}>Novo</option>
-            <option value={2}>Em Análise</option>
-            <option value={3}>Proposta</option>
-            <option value={4}>Ganho</option>
-            <option value={5}>Perdido</option>
+            <option value={1}>{intl.formatMessage({ id: "leads.column.new" })}</option>
+            <option value={2}>{intl.formatMessage({ id: "leads.column.analysis" })}</option>
+            <option value={3}>{intl.formatMessage({ id: "leads.column.proposal" })}</option>
+            <option value={4}>{intl.formatMessage({ id: "leads.column.won" })}</option>
+            <option value={5}>{intl.formatMessage({ id: "leads.column.lost" })}</option>
           </Form.Select>
         </Form.Group>
 
@@ -107,16 +109,16 @@ const EditLeadForm = ({ leadData: initialData, onSuccess, onCancel }) => {
       */}
         <div className="d-flex gap-2 justify-content-end border-top pt-3">
           <Button variant="outline-secondary" onClick={onCancel}>
-            Cancelar
+            {intl.formatMessage({ id: "common.cancel" })}
           </Button>
           <Button variant="primary" type="submit" disabled={loading}>
             {loading ? (
                 <>
                   <Spinner size="sm" className="me-2" />
-                  A guardar...
+                  {intl.formatMessage({ id: "common.saving" })}
                 </>
             ) : (
-                "Guardar Alterações"
+                intl.formatMessage({ id: "common.save" })
             )}
           </Button>
         </div>

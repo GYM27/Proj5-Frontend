@@ -10,6 +10,16 @@ import { useHeaderStore } from "../stores/HeaderStore"; // Ponte para o cabeçal
 import api from "../services/api";
 import GenericHeader from "../components/Shared/GenericHeader";
 
+/**
+ * COMPONENTE: MainLayout
+ * ---------------------
+ * DESCRIÇÃO: Estrutura base da aplicação após login.
+ * FUNCIONALIDADES:
+ * - Gere a Sidebar (colapsável) e o Header.
+ * - Centraliza o WebSocket para mensagens e notificações.
+ * - Implementa o Timeout de Inatividade (Segurança).
+ * - Providencia o container (Outlet) para as sub-páginas do dashboard.
+ */
 const MainLayout = () => {
   // Inicializa o WebSocket assim que a MainLayout é montada (user autenticado)
   useWebSocket();

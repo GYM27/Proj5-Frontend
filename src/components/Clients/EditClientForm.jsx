@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Form, Button, Spinner, Alert } from "react-bootstrap";
 import { useClientStore } from "../../stores/ClientsStore";
+import { useIntl } from "react-intl";
 
 /**
  * COMPONENTE: EditClientForm
@@ -14,6 +15,7 @@ const EditClientForm = ({ clientData, onSuccess, onCancel }) => {
   // Acedemos à Store global de Clientes para executar a atualização e monitorizar o estado de loading
   const { updateClient, loading } = useClientStore();
   const [error, setError] = useState(null);
+  const intl = useIntl();
 
   /**
    * ESTADO LOCAL DO FORMULÁRIO:
@@ -51,7 +53,7 @@ const EditClientForm = ({ clientData, onSuccess, onCancel }) => {
       onSuccess();
     } else {
       // Feedback visual em caso de falha na comunicação com o Backend (Critério: Tratamento de Erros)
-      setError("Erro ao atualizar o cliente.");
+      setError(intl.formatMessage({ id: "clients.update_error" }));
     }
   };
 
@@ -61,30 +63,30 @@ const EditClientForm = ({ clientData, onSuccess, onCancel }) => {
         {error && <Alert variant="danger">{error}</Alert>}
 
         <Form.Group className="mb-3">
-          <Form.Label>Nome Completo</Form.Label>
+          <Form.Label>{intl.formatMessage({ id: "clients.field.name" })}</Form.Label>
           <Form.Control
               name="name"
               value={formData.name}
               onChange={handleChange}
               required
-              placeholder="Ex: João Silva"
+              placeholder={intl.formatMessage({ id: "clients.field.name_placeholder" })}
           />
         </Form.Group>
 
         <Form.Group className="mb-3">
-          <Form.Label>Email</Form.Label>
+          <Form.Label>{intl.formatMessage({ id: "clients.field.email" })}</Form.Label>
           <Form.Control
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
               required
-              placeholder="exemplo@email.com"
+              placeholder={intl.formatMessage({ id: "clients.field.email_placeholder" })}
           />
         </Form.Group>
 
         <Form.Group className="mb-3">
-          <Form.Label>Telemóvel</Form.Label>
+          <Form.Label>{intl.formatMessage({ id: "clients.field.phone" })}</Form.Label>
           <Form.Control
               name="phone"
               value={formData.phone}
@@ -94,12 +96,12 @@ const EditClientForm = ({ clientData, onSuccess, onCancel }) => {
         </Form.Group>
 
         <Form.Group className="mb-4">
-          <Form.Label>Organização</Form.Label>
+          <Form.Label>{intl.formatMessage({ id: "clients.field.organization" })}</Form.Label>
           <Form.Control
               name="organization"
               value={formData.organization}
               onChange={handleChange}
-              placeholder="Nome da empresa (opcional)"
+              placeholder={intl.formatMessage({ id: "clients.field.organization_placeholder" })}
           />
         </Form.Group>
 
@@ -109,16 +111,16 @@ const EditClientForm = ({ clientData, onSuccess, onCancel }) => {
       */}
         <div className="d-flex gap-2 justify-content-end border-top pt-3">
           <Button variant="outline-secondary" onClick={onCancel}>
-            Cancelar
+            {intl.formatMessage({ id: "common.cancel" })}
           </Button>
           <Button variant="primary" type="submit" disabled={loading}>
             {loading ? (
                 <>
                   <Spinner size="sm" className="me-2" />
-                  A guardar...
+                  {intl.formatMessage({ id: "common.saving" })}
                 </>
             ) : (
-                "Guardar Alterações"
+                intl.formatMessage({ id: "common.save" })
             )}
           </Button>
         </div>

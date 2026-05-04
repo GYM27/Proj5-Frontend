@@ -7,6 +7,7 @@ import {useUserStore} from "../../stores/UserStore";
 // Importa os componentes do novo sistema de Modais
 import DynamicModal from "../../Modal/DynamicModal.jsx";
 import EditLeadForm from "./EditLeadForm";
+import { useIntl } from "react-intl";
 
 /**
  * COMPONENTE: LeadDetails
@@ -23,6 +24,7 @@ const LeadDetails = () => {
     // Integração com as Stores globais para persistência e verificação de permissões
     const {leads, deleteLead, fetchMyLeads} = useLeadStore();
     const userRole = useUserStore((state) => state.userRole);
+    const intl = useIntl();
 
     /**
      * ESTADO UNIFICADO PARA MODAIS:
@@ -49,7 +51,7 @@ const LeadDetails = () => {
     const openEdit = () => {
         setModalConfig({
             show: true,
-            title: "Editar Lead",
+            title: intl.formatMessage({ id: "leads.edit_title" }),
             type: "EDIT",
             data: lead,
         });
@@ -58,7 +60,7 @@ const LeadDetails = () => {
     const openDelete = () => {
         setModalConfig({
             show: true,
-            title: "Confirmar Eliminação",
+            title: intl.formatMessage({ id: "leads.delete_confirm_title" }),
             type: "DELETE",
             data: lead,
         });
@@ -81,7 +83,7 @@ const LeadDetails = () => {
     if (!lead)
         return (
             <Container className="mt-4">
-                <p>Lead não encontrada.</p>
+                <p>{intl.formatMessage({ id: "leads.not_found" })}</p>
             </Container>
         );
 
@@ -93,7 +95,7 @@ const LeadDetails = () => {
                 onClick={() => navigate("/leads")}
                 className="mb-3 p-0"
             >
-                <i className="bi bi-arrow-left"></i> Voltar para a lista
+                <i className="bi bi-arrow-left"></i> {intl.formatMessage({ id: "leads.back_list" })}
             </Button>
 
             <Card className="shadow-sm border-0">
@@ -102,13 +104,13 @@ const LeadDetails = () => {
 
                     <Row className="mb-4">
                         <Col md={12}>
-                            <h5>Descrição</h5>
+                            <h5>{intl.formatMessage({ id: "leads.field.description" })}</h5>
                             {/* Bloco de descrição com estilo diferenciado para leitura facilitada */}
                             <p className="bg-light p-3 rounded">
-                                {lead.description || "Sem descrição."}
+                                {lead.description || intl.formatMessage({ id: "leads.no_description" })}
                             </p>
                             <p className="text-muted small">
-                                Criada em: {lead.formattedDate}
+                                {intl.formatMessage({ id: "leads.created_at" }, { date: lead.formattedDate })}
                             </p>
                         </Col>
                     </Row>
@@ -152,15 +154,14 @@ const LeadDetails = () => {
                 {modalConfig.type === "DELETE" && (
                     <div>
                         <p>
-                            Tem a certeza que deseja apagar a lead{" "}
-                            <strong>{lead.title}</strong>?
+                            {intl.formatMessage({ id: "leads.delete_confirm_msg" }, { title: <strong>{lead.title}</strong> })}
                         </p>
                         <div className="d-flex justify-content-end gap-2 mt-3">
                             <Button variant="secondary" onClick={closeModal}>
-                                Cancelar
+                                {intl.formatMessage({ id: "common.cancel" })}
                             </Button>
                             <Button variant="danger" onClick={handleConfirmDelete}>
-                                Confirmar
+                                {intl.formatMessage({ id: "common.confirm" })}
                             </Button>
                         </div>
                     </div>

@@ -5,6 +5,7 @@ import { useLeadStore } from "../../stores/LeadsStore";
 import { useUserStore } from "../../stores/UserStore";
 import FormContainer from "../Shared/FormContainer";
 import AdminAssignmentField from "../Shared/AdminAssignmentField";
+import { useIntl } from "react-intl";
 
 /**
  * COMPONENTE: NewLeads
@@ -22,6 +23,7 @@ const NewLeads = () => {
   const { addLead, loading } = useLeadStore();
   const userRole = useUserStore((state) => state.userRole);
   const isAdmin = userRole === "ADMIN";
+  const intl = useIntl();
 
   /** * COMUNICAÇÃO ENTRE ROTAS (6% da Nota):
    * Captura o estado inicial enviado pelo clique no botão '+' da coluna do Kanban.
@@ -68,7 +70,7 @@ const NewLeads = () => {
       // Redirecionamento após criação bem-sucedida (Navegação com Rotas)
       navigate("/leads");
     } else {
-      setError("Erro ao guardar a lead.");
+      setError(intl.formatMessage({ id: "leads.save_error" }));
     }
   };
 
@@ -78,7 +80,7 @@ const NewLeads = () => {
        * entre todos os formulários da aplicação.
        */
       <FormContainer
-          title="Nova Lead"
+          title={intl.formatMessage({ id: "leads.create_title" })}
           icon="bi-clipboard-plus"
           loading={loading}
           onSubmit={handleSubmit}
@@ -97,18 +99,18 @@ const NewLeads = () => {
         />
 
         <Form.Group className="mb-3">
-          <Form.Label>Título da Lead</Form.Label>
+          <Form.Label>{intl.formatMessage({ id: "leads.field.title" })}</Form.Label>
           <Form.Control
               name="title"
               value={leadData.title}
               onChange={handleChange}
               required
-              placeholder="Ex: Novo Projeto de Consultoria"
+              placeholder={intl.formatMessage({ id: "leads.field.title_placeholder" })}
           />
         </Form.Group>
 
         <Form.Group className="mb-3">
-          <Form.Label>Descrição</Form.Label>
+          <Form.Label>{intl.formatMessage({ id: "leads.field.description" })}</Form.Label>
           <Form.Control
               as="textarea"
               rows={3}
@@ -122,13 +124,13 @@ const NewLeads = () => {
             Mapeia os IDs (1 a 5) usados para definir a posição da Lead no Kanban.
         */}
         <Form.Group className="mb-3">
-          <Form.Label>Estado Inicial</Form.Label>
+          <Form.Label>{intl.formatMessage({ id: "leads.field.initial_state" })}</Form.Label>
           <Form.Select name="state" value={leadData.state} onChange={handleChange}>
-            <option value={1}>Novo</option>
-            <option value={2}>Em Análise</option>
-            <option value={3}>Proposta</option>
-            <option value={4}>Ganho</option>
-            <option value={5}>Perdido</option>
+            <option value={1}>{intl.formatMessage({ id: "leads.column.new" })}</option>
+            <option value={2}>{intl.formatMessage({ id: "leads.column.analysis" })}</option>
+            <option value={3}>{intl.formatMessage({ id: "leads.column.proposal" })}</option>
+            <option value={4}>{intl.formatMessage({ id: "leads.column.won" })}</option>
+            <option value={5}>{intl.formatMessage({ id: "leads.column.lost" })}</option>
           </Form.Select>
         </Form.Group>
       </FormContainer>

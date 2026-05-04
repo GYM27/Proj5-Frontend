@@ -1,5 +1,6 @@
 import React from "react";
 import { Card, Button, Badge } from "react-bootstrap";
+import { useIntl } from "react-intl";
 
 /**
  * COMPONENTE: UserCard
@@ -9,6 +10,7 @@ import { Card, Button, Badge } from "react-bootstrap";
  */
 const UserCard = ({ user, isCurrentUser, onToggleStatus, onHardDelete, onViewProfile }) => {
   const isInactive = user.softDelete;
+  const intl = useIntl();
 
   return (
     <Card
@@ -45,7 +47,7 @@ const UserCard = ({ user, isCurrentUser, onToggleStatus, onHardDelete, onViewPro
             </div>
             
             <Badge bg={isInactive ? "warning" : "success"} className="ms-auto align-self-start">
-                {isInactive ? "Inativo" : "Ativo"}
+                {isInactive ? intl.formatMessage({ id: "common.inactive" }) : intl.formatMessage({ id: "common.active" })}
             </Badge>
         </div>
 
@@ -68,7 +70,7 @@ const UserCard = ({ user, isCurrentUser, onToggleStatus, onHardDelete, onViewPro
             size="sm"
             className="rounded-circle d-flex align-items-center justify-content-center"
             style={{ width: "32px", height: "32px" }}
-            title="Ver Perfil"
+            title={intl.formatMessage({ id: "users.view_profile" })}
             onClick={() => onViewProfile(user)}
           >
             <i className="bi bi-person-vcard" style={{ fontSize: "0.9rem" }}></i>
@@ -81,7 +83,7 @@ const UserCard = ({ user, isCurrentUser, onToggleStatus, onHardDelete, onViewPro
                 size="sm"
                 className="rounded-circle d-flex align-items-center justify-content-center"
                 style={{ width: "32px", height: "32px" }}
-                title={isInactive ? "Reativar" : "Desativar"}
+                title={isInactive ? intl.formatMessage({ id: "users.reactivate" }) : intl.formatMessage({ id: "users.deactivate" })}
                 onClick={() => onToggleStatus(user)}
               >
                 <i
@@ -95,7 +97,7 @@ const UserCard = ({ user, isCurrentUser, onToggleStatus, onHardDelete, onViewPro
                 size="sm"
                 className="rounded-circle d-flex align-items-center justify-content-center"
                 style={{ width: "32px", height: "32px" }}
-                title="Eliminar Permanente"
+                title={intl.formatMessage({ id: "users.hard_delete" })}
                 onClick={() => onHardDelete(user)}
               >
                 <i className="bi bi-trash3" style={{ fontSize: "0.9rem" }}></i>

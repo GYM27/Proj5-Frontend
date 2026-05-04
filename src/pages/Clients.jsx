@@ -4,6 +4,7 @@ import {useClientStore} from "../stores/ClientsStore";
 import {useUserStore} from "../stores/UserStore";
 import {useHeaderStore} from "../stores/HeaderStore"; // Novo
 import {userService} from "../services/userService";
+import {useIntl} from "react-intl";
 
 // COMPONENTES SHARED (Arquitetura Modular - 5%)
 import {useModalManager} from "../Modal/useModalManager.jsx";
@@ -25,7 +26,8 @@ import "../App.css";
  * e execução de ações individuais ou em massa (Bulk).
  */
 const Clients = () => {
-    // 1. ESTADOS E STORES (CRITÉRIO: GESTÃO DE ESTADO - 5%):
+    const intl = useIntl();
+    // 1. ESTADOS E STORES (CRITÉRIO: GESTÃO DE ESTADO):
     const clientStore = useClientStore();
     const {userRole} = useUserStore();
     const isAdmin = userRole === "ADMIN";
@@ -41,7 +43,7 @@ const Clients = () => {
     // Injetamos as dependências para obter as ações prontas para serem distribuídas pelos Cards e Header.
     const {clients: actions} = useResourceActions(openModal, filters, {clientStore, userRole});
 
-    // 3. CARREGAMENTO DE DADOS (CRITÉRIO: FILTRAGEM NO SERVIDOR - 3%):
+    // 3. CARREGAMENTO DE DADOS (CRITÉRIO: FILTRAGEM NO SERVIDOR):
     // Carrega a lista de utilizadores apenas se for Admin (para o filtro de responsável).
     useEffect(() => {
         if (isAdmin) userService.getAllUsers().then(setUsers).catch(console.error);
@@ -60,22 +62,25 @@ const Clients = () => {
 
         // ATUALIZA O CABEÇALHO GLOBAL
         const selectedUser = users.find((u) => String(u.id) === String(filters.userId));
-        const displayName = selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : "Todos";
+        const displayName = selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : intl.formatMessage({ id: "forms.everyone" });
 
         setHeader({
-            title: isTrashMode ? "LIXEIRA CLIENTES" : "CLIENTES",
-            subtitle: `Total: ${clientStore.clients.length} registos | Responsável: ${displayName}`,
+            title: intl.formatMessage({ id: isTrashMode ? "clients.trash_title" : "clients.title" }),
+            subtitle: intl.formatMessage(
+                { id: "clients.subtitle" },
+                { count: clientStore.clients.length, responsible: displayName }
+            ),
             isTrash: isTrashMode,
             showStats: false
         });
     }, [userRole, filters.userId, isTrashMode, clientStore.fetchClients, clientStore.clients.length, users, setHeader]);
 
-    // FEEDBACK VISUAL DE CARREGAMENTO (UX - 3%)
+    // FEEDBACK VISUAL DE CARREGAMENTO
     if (clientStore.loading && clientStore.clients.length === 0) {
         return (
             <Container className="mt-4 text-center">
                 <Spinner animation="border" variant="primary"/>
-                <p>A carregar clientes...</p>
+                <p>{intl.formatMessage({ id: "clients.loading" })}</p>
             </Container>
         );
     }
@@ -94,7 +99,7 @@ const Clients = () => {
                 actions={actions}
             />
 
-            {/* 2. LISTA DE CLIENTES (GRID RESPONSIVA - 4%):
+            {/* 2. LISTA DE CLIENTES (GRID RESPONSIVA):
                 Usa o sistema de grelha do Bootstrap para adaptar o número de colunas ao ecrã.
             */}
             <div>
@@ -104,8 +109,8 @@ const Clients = () => {
                         <i className="bi bi-folder2-open display-4 text-muted"></i>
                         <p className="mt-3 text-muted">
                             {isTrashMode
-                                ? "Lixeira vazia ou utilizador não selecionado."
-                                : "Nenhum cliente encontrado."}
+                                ? intl.formatMessage({ id: "clients.empty_trash" })
+                                : intl.formatMessage({ id: "clients.empty_list" })}
                         </p>
                     </div>
                 ) : (

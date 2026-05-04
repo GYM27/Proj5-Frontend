@@ -2,6 +2,7 @@ import React from "react";
 import { NavDropdown, Image } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "../../stores/UserStore";
+import { logoutUser } from "../../services/loginService";
 
 /**
  * COMPONENTE: UserMenu
@@ -19,20 +20,20 @@ const UserMenu = () => {
 
   /**
    * LÓGICA DE LOGOUT CORRIGIDA:
-   * 1. Limpa o sessionStorage (onde o token e a store realmente residem).
-   * 2. Limpa o estado reativo da Store (Zustand) para forçar o re-render da UI.
-   * 3. Redireciona para o login com 'replace' para limpar o histórico.
+   * 1. Chama o backend para invalidar o token e registar auditoria.
+   * 2. Limpa o sessionStorage.
+   * 3. Limpa o estado reativo da Store.
    */
-  const handleLogout = () => {
-    // 1. LIMPEZA FÍSICA: O teu apiRequest e UserStore usam sessionStorage!
-    sessionStorage.clear();
-    localStorage.clear(); // Por precaução, caso tenha restos de dados aqui
-
-    // 2. LIMPEZA REATIVA: Remove o role de "ADMIN" da memória do React
-    clearUser();
-
-    // 3. NAVEGAÇÃO FORÇADA: Impede que o user use o botão "Voltar" para ver o Dashboard
-    navigate("/login", { replace: true });
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+    } catch (err) {
+      console.warn("Servidor não respondeu ao logout, a prosseguir com limpeza local.");
+    } finally {
+      sessionStorage.clear();
+      clearUser();
+      navigate("/login", { replace: true });
+    }
   };
 
   /**

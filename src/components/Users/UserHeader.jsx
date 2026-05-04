@@ -1,5 +1,6 @@
 import { Button, Form, InputGroup } from "react-bootstrap";
 import HeaderActions from "../Shared/HeaderActions";
+import { useIntl } from "react-intl";
 
 /**
  * COMPONENTE: UsersHeader
@@ -8,6 +9,7 @@ import HeaderActions from "../Shared/HeaderActions";
  * FOCO: Filtro de pesquisa proeminente e botão de convite discreto.
  */
 const UsersHeader = ({ onInviteClick, searchTerm, onSearchChange }) => {
+  const intl = useIntl();
   return (
     <HeaderActions>
       <div className="d-flex flex-column flex-md-row gap-2 align-items-center w-100">
@@ -22,7 +24,7 @@ const UsersHeader = ({ onInviteClick, searchTerm, onSearchChange }) => {
           </InputGroup.Text>
           <Form.Control
             type="text"
-            placeholder="Pesquisar utilizadores"
+            placeholder={intl.formatMessage({ id: "users.search_placeholder" })}
             className="border-start-0 py-2"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -39,7 +41,7 @@ const UsersHeader = ({ onInviteClick, searchTerm, onSearchChange }) => {
           style={{ fontSize: "0.85rem" }}
         >
           <i className="bi bi-person-plus-fill"></i>
-          <span className="d-md-inline">Convidar</span>
+          <span className="d-md-inline">{intl.formatMessage({ id: "users.invite" })}</span>
         </Button>
         
       </div>

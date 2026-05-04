@@ -4,6 +4,7 @@ import ActionGroup from "../Shared/ActionGroup";
 import ActionButton from "../Shared/ActionButton";
 import HeaderActions from "../Shared/HeaderActions";
 import { BUTTON_TYPES } from "../Shared/buttonConfigs";
+import { useIntl } from "react-intl";
 
 const ClientsHeader = ({
                            isTrashMode,
@@ -16,23 +17,24 @@ const ClientsHeader = ({
                            clientsCount,
                            actions,
                        }) => {
+    const intl = useIntl();
 
     const selectedUser = users.find((u) => String(u.id) === String(filters.userId));
-    const displayName = selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : "Todos";
+    const displayName = selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : intl.formatMessage({ id: "forms.everyone" });
 
     return (
         <HeaderActions>
             {/* FILTRO DE RESPONSÁVEL */}
             {isAdmin && (
                 <div className="d-flex align-items-center gap-2 me-2 border-end pe-3">
-                    <span className="fw-bold small text-secondary">Responsável:</span>
+                    <span className="fw-bold small text-secondary">{intl.formatMessage({ id: "forms.filter_responsible" })}</span>
                     <Form.Select
                         size="sm"
                         style={{ width: "180px" }}
                         value={filters.userId}
                         onChange={(e) => setFilters({ ...filters, userId: e.target.value })}
                     >
-                        <option value="">Todos</option>
+                        <option value="">{intl.formatMessage({ id: "forms.all" })}</option>
                         {users.map((u) => (
                             <option key={u.id} value={u.id}>
                                 {u.firstName} {u.lastName}
@@ -62,7 +64,7 @@ const ClientsHeader = ({
             {!isTrashMode && (
                 <ActionButton
                     {...BUTTON_TYPES.ADD}
-                    tooltip="Novo Cliente"
+                    tooltip={intl.formatMessage({ id: "clients.create_title" })}
                     onClick={() => actions.openCreate()}
                 />
             )}
