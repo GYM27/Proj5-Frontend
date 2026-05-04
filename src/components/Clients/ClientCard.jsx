@@ -1,56 +1,67 @@
 import React from "react";
-import {Card} from "react-bootstrap";
+import { Card, Badge } from "react-bootstrap";
 import ActionGroup from "../Shared/ActionGroup";
+import { useIntl } from "react-intl";
 
 /**
  * COMPONENTE: ClientCard
  * ---------------------
- * DESCRIÇÃO: Representa visualmente um cliente na lista/grelha.
- * NOTA TÉCNICA: Este é um "Presentational Component". Ele não sabe como apagar ou editar;
- * apenas recebe as instruções (cardActions) e os dados (client) e exibe-os.
+ * DESCRIÇÃO: Representa visualmente um cliente seguindo o design system premium.
  */
-const ClientCard = ({client, isTrashMode, isAdmin, cardActions}) => {
-
-    // --- CONFIGURAÇÃO DE ESTILOS (CRITÉRIO: EVITAR MAGIC CONSTANTS) ---
-    // Extraímos os valores fixos para constantes para facilitar a leitura e manutenção.
-    const STYLE_CONTACTS = {fontSize: "0.95em"};
-    const STYLE_OWNER_LABEL = {fontSize: "0.75rem", color: "#444"};
-    const STYLE_ICON_SMALL = {fontSize: "0.8rem"};
+const ClientCard = ({ client, isTrashMode, isAdmin, cardActions }) => {
+    const intl = useIntl();
+    
+    // Iniciais para o Avatar (Regra: Máximo 2 letras)
+    const initials = client.name ? client.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : "??";
 
     return (
-        <Card className="h-100 shadow-sm border-start border-2 border-primary">
-            <Card.Body className="d-flex flex-column">
+        <Card className="h-100 shadow-sm border-0 rounded-4 overflow-hidden" 
+              style={{ borderTop: "4px solid #0d6efd" }}>
+            <Card.Body className="p-3 d-flex flex-column">
+                
+                {/* CABEÇALHO: Avatar e Identificação */}
+                <div className="d-flex align-items-center mb-3">
+                    <div className="rounded-circle overflow-hidden flex-shrink-0 shadow-sm d-flex align-items-center justify-content-center bg-light border" 
+                         style={{ width: '50px', height: '50px', backgroundColor: '#f8f9fa' }}>
+                        <span className="fw-bold text-primary" style={{ fontSize: '1rem' }}>
+                            {initials}
+                        </span>
+                    </div>
+                    
+                    <div className="ms-3 overflow-hidden">
+                        <h6 className="fw-bold mb-0 text-truncate" style={{ color: "#2c3e50" }}>
+                            {client.name}
+                        </h6>
+                        <small className="text-primary fw-semibold text-truncate d-block">
+                            <i className="bi bi-building me-1"></i>
+                            {client.organization}
+                        </small>
+                    </div>
+                </div>
 
-                {/* TÍTULO: Nome do Cliente ou Empresa */}
-                <Card.Title className="fw-bold text-truncate mb-1">
-                    {client.name}
-                </Card.Title>
-
-                {/* BLOCO DE CONTACTOS (Regra: Exibir dados vindos da API) */}
-                <div className="border-top pt-2 mt-2" style={STYLE_CONTACTS}>
-                    <Card.Text className="text-primary small fw-bold mb-2">
-                        <i className="bi bi-building me-2"></i>
-                        {client.organization}
-                    </Card.Text>
-
-                    <div className="text-truncate mb-1">
-                        <i className="bi bi-envelope me-2 text-muted"></i>
+                {/* INFO DE CONTACTO */}
+                <div className="mb-3" style={{ fontSize: "0.85rem", flexGrow: 1 }}>
+                    <div className="mb-1 text-truncate text-muted" title={client.email}>
+                        <i className="bi bi-envelope me-2"></i>
                         {client.email}
                     </div>
-
                     <div className="text-muted">
                         <i className="bi bi-telephone me-2"></i>
                         {client.phone}
                     </div>
                 </div>
 
-                {/* RODAPÉ DO CARTÃO: Informação do Proprietário e Ações Disponíveis */}
-                <div className="d-flex justify-content-between align-items-center mt-auto pt-3">
+                {/* RODAPÉ E AÇÕES */}
+                <div className="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
+                    {/* Responsável pelo Cliente */}
+                    <div className="overflow-hidden" style={{ maxWidth: '60%' }}>
+                        <small className="text-muted d-block text-truncate" style={{ fontSize: '0.7rem' }}>
+                            <i className="bi bi-person-badge me-1"></i>
+                            {client.ownerName || "Sistema"}
+                        </small>
+                    </div>
 
-                    {/* ACTION GROUP:
-                        Componente que centraliza os botões (Editar, Apagar, Ver).
-                        Passamos 'cardActions' que contém a lógica de cliques definida no pai.
-                    */}
+                    {/* Centralização das Ações */}
                     <ActionGroup
                         actions={cardActions}
                         item={client}

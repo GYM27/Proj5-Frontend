@@ -50,8 +50,8 @@ const ChatPage = () => {
     <div
       className="container p-0 shadow-lg rounded-4 overflow-hidden mx-auto border-0"
       style={{
-        height: "calc(100vh - 140px)",
-        minHeight: "600px",
+        height: "calc(100vh - 280px)", // Ajustado para dar espaço ao Header, GenericHeader e Footer
+        minHeight: "450px",            // Reduzido para caber em portáteis pequenos
         maxWidth: "1200px",
         backgroundColor: "#2d3238", // Fundo unificado e escuro
       }}
