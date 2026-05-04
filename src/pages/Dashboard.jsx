@@ -5,6 +5,7 @@ import { useHeaderStore } from "../stores/HeaderStore";
 import api from "../services/api";
 import { Form } from "react-bootstrap";
 import "../App.css";
+import { FormattedMessage, useIntl } from "react-intl";
 import {
   BarChart,
   Bar,
@@ -47,6 +48,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { userRole, isAuthenticated, firstName } = useUserStore();
   const { setHeader } = useHeaderStore();
+  const intl = useIntl();
 
   // Carregar lista de utilizadores para o filtro (Só Admin)
   useEffect(() => {
@@ -87,11 +89,11 @@ const Dashboard = () => {
   useEffect(() => {
     const targetUser = users.find(u => u.id == selectedUserId);
     setHeader({
-      title: `Olá, ${firstName || "Utilizador"}`,
+      title: intl.formatMessage({ id: "common.welcome" }, { name: firstName || "Utilizador" }),
       subtitle:
         userRole === "ADMIN"
-          ? (selectedUserId && targetUser ? `A visualizar: ${targetUser.firstName} ${targetUser.lastName}` : "Painel de Administração Global")
-          : "O seu resumo de vendas de hoje",
+          ? (selectedUserId && targetUser ? `A visualizar: ${targetUser.firstName} ${targetUser.lastName}` : intl.formatMessage({ id: "dashboard.admin_subtitle" }))
+          : intl.formatMessage({ id: "dashboard.subtitle" }),
       showStats: false,
     });
     if (isAuthenticated) fetchDashboardData(selectedUserId);
@@ -135,14 +137,16 @@ const Dashboard = () => {
           <div className="col-md-4 col-lg-3">
             <div className="card p-3 border-0 shadow-sm bg-white" style={{ borderRadius: "12px" }}>
               <Form.Group>
-                <Form.Label className="small fw-bold text-uppercase text-muted mb-2">Visualizar Dashboard de:</Form.Label>
-                <Form.Select 
-                  value={selectedUserId} 
+                <Form.Label className="small fw-bold text-uppercase text-muted mb-2">
+                  {intl.formatMessage({ id: "dashboard.view_dashboard_of" }, { default: "Visualizar Dashboard de:" })}
+                </Form.Label>
+                <Form.Select
+                  value={selectedUserId}
                   onChange={(e) => setSelectedUserId(e.target.value)}
                   className="border-0 bg-light fw-bold"
                   style={{ borderRadius: "8px", cursor: "pointer" }}
                 >
-                  <option value="">Visão Global (Equipa)</option>
+                  <option value="">{intl.formatMessage({ id: "dashboard.global_view" }, { default: "Visão Global (Equipa)" })}</option>
                   {users.map(u => (
                     <option key={u.id} value={u.id}>
                       👤 {u.firstName} {u.lastName} ({u.username})
@@ -156,12 +160,12 @@ const Dashboard = () => {
             <div className="col-md-8 col-lg-9 d-flex align-items-center">
               <div className="alert alert-info border-0 shadow-sm mb-0 w-100 py-2 rounded-3">
                 <i className="bi bi-info-circle-fill me-2"></i>
-                Está a visualizar o desempenho individual de <strong>{users.find(u => u.id == selectedUserId)?.firstName}</strong>.
-                <button 
+                {intl.formatMessage({ id: "dashboard.viewing_user" }, { name: users.find(u => u.id == selectedUserId)?.firstName || "" })}
+                <button
                   className="btn btn-link btn-sm text-info fw-bold text-decoration-none ms-2"
                   onClick={() => setSelectedUserId("")}
                 >
-                  Limpar Filtro
+                  {intl.formatMessage({ id: "dashboard.clear_filter" }, { default: "Limpar Filtro" })}
                 </button>
               </div>
             </div>
@@ -172,36 +176,11 @@ const Dashboard = () => {
       {/* KPI CARDS (FUNIL) */}
       <div className="row g-3 mb-4 justify-content-center">
         {[
-          {
-            label: "Novos Leads",
-            count: stats.novos,
-            color: "#5793f4",
-            stateId: 1,
-          },
-          {
-            label: "Em Análise",
-            count: stats.analise,
-            color: "#f0f2d3",
-            stateId: 2,
-          },
-          {
-            label: "Propostas",
-            count: stats.propostas,
-            color: "#e0ecff",
-            stateId: 3,
-          },
-          {
-            label: "Ganhos",
-            count: stats.ganhos,
-            color: "#d4edda",
-            stateId: 4,
-          },
-          {
-            label: "Perdidos",
-            count: stats.perdidos,
-            color: "#f8d7da",
-            stateId: 5,
-          },
+          { labelKey: "dashboard.kpi.new",      count: stats.novos,    color: "#5793f4", stateId: 1 },
+          { labelKey: "dashboard.kpi.analysis", count: stats.analise,  color: "#f0f2d3", stateId: 2 },
+          { labelKey: "dashboard.kpi.proposal", count: stats.propostas,color: "#e0ecff", stateId: 3 },
+          { labelKey: "dashboard.kpi.won",      count: stats.ganhos,   color: "#d4edda", stateId: 4 },
+          { labelKey: "dashboard.kpi.lost",     count: stats.perdidos,  color: "#f8d7da", stateId: 5 },
         ].map((item, index) => (
           <div key={index} className="col-md-2 col-sm-4 col-6">
             <div
@@ -209,7 +188,9 @@ const Dashboard = () => {
               style={{ backgroundColor: item.color, cursor: "pointer" }}
               onClick={() => navigate(`/leads?state=${item.stateId}`)}
             >
-              <div className="small fw-bold opacity-75">{item.label}</div>
+              <div className="small fw-bold opacity-75">
+                <FormattedMessage id={item.labelKey} />
+              </div>
               <div className="display-6 fw-bold">{item.count}</div>
             </div>
           </div>
@@ -219,67 +200,37 @@ const Dashboard = () => {
       {/* MÉTRICAS SECUNDÁRIAS */}
       <div className="row g-4 mb-4">
         <div className="col-md-4">
-          <div
-            className="card p-4 border-0 shadow-sm bg-white h-100 text-center"
-            style={{ borderRadius: "15px" }}
-          >
-            <h6
-              className="text-muted text-uppercase fw-bold mb-3"
-              style={{ fontSize: "0.8rem" }}
-            >
-              Eficiência de Vendas
+          <div className="card p-4 border-0 shadow-sm bg-white h-100 text-center" style={{ borderRadius: "15px" }}>
+            <h6 className="text-muted text-uppercase fw-bold mb-3" style={{ fontSize: "0.8rem" }}>
+              <FormattedMessage id="dashboard.sales_efficiency" />
             </h6>
-            <div
-              className="h2 fw-bold mb-1"
-              style={{ color: conversionRate > 30 ? "#10b981" : "#f59e0b" }}
-            >
+            <div className="h2 fw-bold mb-1" style={{ color: conversionRate > 30 ? "#10b981" : "#f59e0b" }}>
               {conversionRate}%
             </div>
-            <div className="small text-muted mb-3">Taxa de Conversão</div>
-            <div
-              className="progress"
-              style={{ height: "8px", borderRadius: "4px" }}
-            >
-              <div
-                className="progress-bar"
-                style={{
-                  width: `${conversionRate}%`,
-                  backgroundColor: "#10b981",
-                }}
-              ></div>
+            <div className="small text-muted mb-3">
+              <FormattedMessage id="dashboard.conversion_rate" />
+            </div>
+            <div className="progress" style={{ height: "8px", borderRadius: "4px" }}>
+              <div className="progress-bar" style={{ width: `${conversionRate}%`, backgroundColor: "#10b981" }}></div>
             </div>
           </div>
         </div>
         <div className="col-md-4">
-          <div
-            className="card p-4 border-0 shadow-sm bg-white h-100 text-center"
-            style={{ borderRadius: "15px", cursor: "pointer" }}
-            onClick={() => navigate("/leads")}
-          >
-            <h6
-              className="text-muted text-uppercase fw-bold mb-3"
-              style={{ fontSize: "0.8rem" }}
-            >
-              Total de Leads
+          <div className="card p-4 border-0 shadow-sm bg-white h-100 text-center" style={{ borderRadius: "15px", cursor: "pointer" }} onClick={() => navigate("/leads")}>
+            <h6 className="text-muted text-uppercase fw-bold mb-3" style={{ fontSize: "0.8rem" }}>
+              <FormattedMessage id="dashboard.total_leads" />
             </h6>
             <div className="h2 fw-bold text-primary">{stats.leads}</div>
-            <div className="small text-muted">Leads em curso</div>
+            <div className="small text-muted"><FormattedMessage id="dashboard.leads_in_progress" /></div>
           </div>
         </div>
         <div className="col-md-4">
-          <div
-            className="card p-4 border-0 shadow-sm bg-white h-100 text-center"
-            style={{ borderRadius: "15px", cursor: "pointer" }}
-            onClick={() => navigate("/clients")}
-          >
-            <h6
-              className="text-muted text-uppercase fw-bold mb-3"
-              style={{ fontSize: "0.8rem" }}
-            >
-              Carteira de Clientes
+          <div className="card p-4 border-0 shadow-sm bg-white h-100 text-center" style={{ borderRadius: "15px", cursor: "pointer" }} onClick={() => navigate("/clients")}>
+            <h6 className="text-muted text-uppercase fw-bold mb-3" style={{ fontSize: "0.8rem" }}>
+              <FormattedMessage id="dashboard.total_clients" />
             </h6>
             <div className="h2 fw-bold text-success">{stats.clientes}</div>
-            <div className="small text-muted">Contas ativas</div>
+            <div className="small text-muted"><FormattedMessage id="dashboard.active_accounts" /></div>
           </div>
         </div>
       </div>
@@ -287,12 +238,9 @@ const Dashboard = () => {
       {/* GRÁFICO DE CRESCIMENTO */}
       <div className="row mb-5">
         <div className="col-12">
-          <div
-            className="card p-4 border-0 shadow-sm bg-white"
-            style={{ borderRadius: "15px" }}
-          >
+          <div className="card p-4 border-0 shadow-sm bg-white" style={{ borderRadius: "15px" }}>
             <h5 className="fw-bold mb-4 px-2">
-              Crescimento Temporal da Atividade
+              <FormattedMessage id="dashboard.growth_chart" />
             </h5>
             <ResponsiveContainer width="100%" height={350}>
               <BarChart
@@ -365,7 +313,7 @@ const Dashboard = () => {
             >
               <h5 className="fw-bold mb-4 px-2 d-flex align-items-center">
                 <i className="bi bi-trophy-fill text-warning me-2"></i>
-                Top 10 Utilizadores (Taxa de Conversão)
+                <FormattedMessage id="dashboard.top_performers" />
               </h5>
               <ResponsiveContainer width="100%" height={350}>
                 <BarChart
@@ -401,7 +349,9 @@ const Dashboard = () => {
       {/* GESTÃO DE EQUIPA (SÓ ADMIN) */}
       {userRole === "ADMIN" && (
         <>
-          <h5 className="mb-4 fw-bold text-muted">Gestão de Utilizadores</h5>
+          <h5 className="mb-4 fw-bold text-muted">
+            <FormattedMessage id="dashboard.user_management" />
+          </h5>
           <div className="row g-4">
             <div className="col-md-4">
               <div
@@ -419,7 +369,7 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <div className="small text-muted fw-bold">
-                      Total utilizadores
+                      <FormattedMessage id="dashboard.total_users" />
                     </div>
                     <div className="h4 mb-0 fw-bold">{stats.totalUsers} </div>
                   </div>
@@ -440,7 +390,7 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <div className="small text-muted fw-bold">
-                      Utilizadores ativos
+                      <FormattedMessage id="dashboard.active_users" />
                     </div>
                     <div className="h4 mb-0 fw-bold text-success">
                       {stats.confirmedUsers} Ativos
@@ -463,7 +413,7 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <div className="small text-muted fw-bold">
-                      Utilizadores inativos
+                      <FormattedMessage id="dashboard.inactive_users" />
                     </div>
                     <div className="h4 mb-0 fw-bold text-danger">
                       {stats.inactiveUsers} Inativos

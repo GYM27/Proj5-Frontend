@@ -3,16 +3,10 @@ import { useNavigate, Link } from "react-router-dom";
 import { useUserStore } from "../stores/UserStore";
 import { loginUser } from "../services/loginService.js";
 import {
-  Container,
-  Card,
-  Form,
-  Button,
-  Alert,
-  Row,
-  Col,
-  Modal
+  Container, Card, Form, Button, Alert, Row, Col, Modal
 } from "react-bootstrap";
 import { userService } from "../services/userService";
+import { FormattedMessage, useIntl } from "react-intl";
 
 /**
  * COMPONENTE: Login
@@ -26,6 +20,7 @@ function Login() {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const intl = useIntl();
 
   // Estados do Modal de Recuperação de Password
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -123,7 +118,7 @@ function Login() {
             <Card className="shadow-lg border-0" style={{ width: "22rem" }}>
               <Card.Body className="p-4">
                 <div className="text-center mb-4">
-                  <h2 className="fw-bold">Bem-vindo</h2>
+                  <h2 className="fw-bold"><FormattedMessage id="login.title" /></h2>
                 </div>
 
                 {/* FEEDBACK DE ERRO: Alerta dinâmico se a autenticação falhar */}
@@ -135,11 +130,13 @@ function Login() {
 
                 <Form onSubmit={handleSubmit}>
                   <Form.Group className="mb-3" controlId="formUsername">
-                    <Form.Label className="fw-bold text-secondary small">Utilizador</Form.Label>
+                    <Form.Label className="fw-bold text-secondary small">
+                      <FormattedMessage id="login.username" />
+                    </Form.Label>
                     <Form.Control
                         type="text"
                         name="username"
-                        placeholder="Nome de utilizador"
+                        placeholder={intl.formatMessage({ id: "login.username_placeholder" })}
                         value={inputs.username}
                         onChange={handleChange}
                         required
@@ -149,11 +146,13 @@ function Login() {
                   </Form.Group>
 
                   <Form.Group className="mb-4" controlId="formPassword">
-                    <Form.Label className="fw-bold text-secondary small">Palavra-passe</Form.Label>
+                    <Form.Label className="fw-bold text-secondary small">
+                      <FormattedMessage id="login.password" />
+                    </Form.Label>
                     <Form.Control
                         type="password"
                         name="password"
-                        placeholder="Sua password"
+                        placeholder={intl.formatMessage({ id: "login.password_placeholder" })}
                         value={inputs.password}
                         onChange={handleChange}
                         required
@@ -169,17 +168,19 @@ function Login() {
                       disabled={isLoading}
                       className="w-100 py-2 fw-bold"
                   >
-                    {isLoading ? "A entrar..." : "Login"}
+                    {isLoading
+                      ? <FormattedMessage id="login.loading" />
+                      : <FormattedMessage id="login.submit" />}
                   </Button>
 
                   <div className="text-center mt-4">
-                    <span className="text-muted small">Esqueceu-se da password? </span>
-                    <Button 
-                      variant="link" 
+                    <span className="text-muted small"><FormattedMessage id="login.forgot" /> </span>
+                    <Button
+                      variant="link"
                       className="text-decoration-none fw-bold small p-0 m-0 align-baseline"
                       onClick={() => setShowForgotModal(true)}
                     >
-                      Recuperar aqui
+                      <FormattedMessage id="login.forgot_link" />
                     </Button>
                   </div>
                 </Form>
@@ -191,7 +192,9 @@ function Login() {
         {/* MODAL DE RECUPERAÇÃO DE PASSWORD */}
         <Modal show={showForgotModal} onHide={() => setShowForgotModal(false)} centered>
           <Modal.Header closeButton>
-            <Modal.Title className="fs-5 fw-bold">Recuperar Password</Modal.Title>
+            <Modal.Title className="fs-5 fw-bold">
+              <FormattedMessage id="login.recover_title" />
+            </Modal.Title>
           </Modal.Header>
           <Modal.Body>
             {forgotMessage && (
@@ -200,7 +203,7 @@ function Login() {
               </Alert>
             )}
             <p className="small text-muted mb-3">
-              Insira o email associado à sua conta. Se o email existir no sistema, enviaremos um link de recuperação.
+              <FormattedMessage id="login.recover_desc" />
             </p>
             <Form onSubmit={handleForgotPassword}>
               <Form.Group className="mb-3" controlId="formForgotEmail">
@@ -216,10 +219,12 @@ function Login() {
               </Form.Group>
               <div className="d-flex justify-content-end gap-2">
                 <Button variant="outline-secondary" onClick={() => setShowForgotModal(false)}>
-                  Cancelar
+                  <FormattedMessage id="common.cancel" />
                 </Button>
                 <Button variant="primary" type="submit" disabled={isForgotLoading || !forgotEmail}>
-                  {isForgotLoading ? "A enviar..." : "Enviar Email"}
+                  {isForgotLoading
+                    ? <FormattedMessage id="login.recover_sending" />
+                    : <FormattedMessage id="login.recover_send" />}
                 </Button>
               </div>
             </Form>

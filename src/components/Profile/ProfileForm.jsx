@@ -49,7 +49,7 @@ const ProfileForm = ({
 
         <Col md={6}>
           <Form.Group className="mb-3">
-            <Form.Label>Username</Form.Label>
+            <Form.Label><FormattedMessage id="profile.username" defaultMessage="Username" /></Form.Label>
             <Form.Control
               name="username"
               value={formData.username || ""}
@@ -101,7 +101,7 @@ const ProfileForm = ({
       </Row>
 
       <Form.Group className="mb-3 mt-4">
-        <Form.Label>Email</Form.Label>
+        <Form.Label><FormattedMessage id="profile.email" defaultMessage="Email" /></Form.Label>
         <Form.Control
           type="email"
           name="email"
@@ -113,7 +113,7 @@ const ProfileForm = ({
       </Form.Group>
 
       <Form.Group className="mb-3">
-        <Form.Label>Telemóvel</Form.Label>
+        <Form.Label><FormattedMessage id="profile.cellphone" defaultMessage="Telemóvel" /></Form.Label>
         <Form.Control
           name="cellphone"
           value={formData.cellphone || ""}
@@ -124,7 +124,7 @@ const ProfileForm = ({
       </Form.Group>
 
       <Form.Group className="mb-4">
-        <Form.Label>URL da Foto</Form.Label>
+        <Form.Label><FormattedMessage id="profile.photoUrl" defaultMessage="URL da Foto" /></Form.Label>
         <Form.Control
           name="photoUrl"
           value={formData.photoUrl || ""}
