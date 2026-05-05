@@ -25,18 +25,16 @@ import "../App.css";
  */
 const Clients = () => {
     const intl = useIntl();
-    const {
-        clients,
-        loading,
-        error,
-        fetchClients,
-        currentPage,
-        totalPages,
-        totalItems,
-        deleteClient,
-        restoreClient,
-        handleBulkAction
-    } = useClientStore();
+    const clients = useClientStore((state) => state.clients);
+    const loading = useClientStore((state) => state.loading);
+    const error = useClientStore((state) => state.error);
+    const fetchClients = useClientStore((state) => state.fetchClients);
+    const currentPage = useClientStore((state) => state.currentPage);
+    const totalPages = useClientStore((state) => state.totalPages);
+    const totalItems = useClientStore((state) => state.totalItems);
+    const deleteClient = useClientStore((state) => state.deleteClient);
+    const restoreClient = useClientStore((state) => state.restoreClient);
+    const handleBulkAction = useClientStore((state) => state.handleBulkAction);
     
     const { userRole, username: currentUsername } = useUserStore();
     const isAdmin = userRole === "ADMIN";
@@ -74,10 +72,10 @@ const Clients = () => {
                 search: searchTerm,
                 page: 1 // Ao mudar filtros/pesquisa, resetamos sempre para a página 1
             });
-        }, 300);
+        }, 600);
 
         return () => clearTimeout(delay);
-    }, [userRole, filters.userId, isTrashMode, searchTerm, fetchClients]);
+    }, [userRole, filters.userId, isTrashMode, searchTerm]);
 
     // Atualização das estatísticas e metadados no cabeçalho global
     useEffect(() => {
@@ -100,25 +98,7 @@ const Clients = () => {
 
     const handleSearchChange = (val) => {
         setSearchTerm(val);
-        // Ao mudar a pesquisa, voltamos para a página 1 (através da store se necessário, mas aqui apenas resetamos o estado se a store permitir)
-        // Como o currentPage está na store, vamos forçar o fetch da página 1
-        clientStore.fetchClients(userRole, {
-            userId: filters.userId || null,
-            showTrash: isTrashMode,
-            search: val,
-            page: 1
-        });
     };
-
-    // FEEDBACK VISUAL DE CARREGAMENTO
-    if (loading && clients.length === 0) {
-        return (
-            <Container className="mt-4 text-center">
-                <Spinner animation="border" variant="primary"/>
-                <p>{intl.formatMessage({ id: "clients.loading" })}</p>
-            </Container>
-        );
-    }
 
     return (
         <Container className="mt-4">
@@ -128,7 +108,7 @@ const Clients = () => {
                 setIsTrashMode={setIsTrashMode}
                 isAdmin={isAdmin}
                 filters={filters}
-                setFilters={(f) => { setFilters(f); clientStore.fetchClients(userRole, {...f, showTrash: isTrashMode, page: 1}); }}
+                setFilters={setFilters}
                 users={users}
                 searchTerm={searchTerm}
                 onSearchChange={handleSearchChange}
@@ -136,11 +116,15 @@ const Clients = () => {
                 actions={actions}
             />
 
-            {/* 2. LISTA DE CLIENTES (GRID RESPONSIVA):
-                Usa o sistema de grelha do Bootstrap para adaptar o número de colunas ao ecrã.
-            */}
-            <div>
-                {clients.length === 0 ? (
+            {/* 2. LISTA DE CLIENTES (GRID RESPONSIVA) */}
+            {loading && clients.length === 0 ? (
+                <div className="text-center mt-5">
+                    <Spinner animation="border" variant="primary"/>
+                    <p>{intl.formatMessage({ id: "clients.loading" })}</p>
+                </div>
+            ) : (
+                <div>
+                    {clients.length === 0 ? (
                     /* EMPTY STATE: Feedback visual quando não há resultados */
                     <div className="text-center p-5 bg-light rounded border">
                         <i className="bi bi-folder2-open display-4 text-muted"></i>
@@ -176,8 +160,9 @@ const Clients = () => {
                     })}
                 />
             </div>
+        )}
 
-            {/* 3. MODAL DINÂMICO ÚNICO (Lógica Centralizada):
+        {/* 3. MODAL DINÂMICO ÚNICO (Lógica Centralizada):
                 Este modal único serve para Edição e para todas as Confirmações.
             */}
             <DynamicModal
@@ -206,8 +191,8 @@ const Clients = () => {
                             const currentFilters = {userId: filters.userId || null, showTrash: isTrashMode};
 
                             const actionMap = {
-                                "SOFT_DELETE": () => deleteClient(data.id, false), // Regra A9
-                                "HARD_DELETE": () => deleteClient(data.id, true),  // Regra A14
+                                "SOFT_DELETE": () => deleteClient(data.id, false), 
+                                "HARD_DELETE": () => deleteClient(data.id, true),  
                                 "BULK_SOFT_DELETE": () => handleBulkAction(data.userId, "DEACTIVATE_ALL", userRole, currentFilters),
                                 "BULK_HARD_DELETE": () => handleBulkAction(data.userId, "EMPTY_TRASH", userRole, currentFilters),
                                 "RESTORE_CLIENT": () => restoreClient(data.id, data, userRole),

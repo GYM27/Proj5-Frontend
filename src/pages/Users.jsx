@@ -101,15 +101,6 @@ const Users = () => {
         await executeUserAction(modalConfig.type, data);
     };
 
-    if (loading && users.length === 0) {
-        return (
-            <Container className="mt-5 text-center">
-                <Spinner animation="border" variant="primary" />
-                <p className="mt-3 text-muted">{intl.formatMessage({ id: "users.loading" })}</p>
-            </Container>
-        );
-    }
-
     return (
         <div className="users-page">
             <UsersHeader 
@@ -119,21 +110,30 @@ const Users = () => {
             />
 
             <Container>
-                {error && <Alert variant="danger">{error}</Alert>}
+                {loading && users.length === 0 ? (
+                    <div className="text-center mt-5">
+                        <Spinner animation="border" variant="primary" />
+                        <p className="mt-3 text-muted">{intl.formatMessage({ id: "users.loading" })}</p>
+                    </div>
+                ) : (
+                    <>
+                        {error && <Alert variant="danger">{error}</Alert>}
 
-                <UserGrid
-                    users={users} // Passamos a lista vinda do backend
-                    currentUsername={currentUsername}
-                    onViewProfile={(u) => navigate(`/users/${u.username}`)}
-                    onToggleStatus={(u) => openModal("USER_TOGGLE_STATUS", u.softDelete ? intl.formatMessage({ id: "users.reactivate" }) : intl.formatMessage({ id: "users.deactivate" }), u)}
-                    onHardDelete={(u) => openModal("USER_HARD_DELETE", intl.formatMessage({ id: "users.hard_delete_title" }), u)}
-                />
+                        <UserGrid
+                            users={users} // Passamos a lista vinda do backend
+                            currentUsername={currentUsername}
+                            onViewProfile={(u) => navigate(`/users/${u.username}`)}
+                            onToggleStatus={(u) => openModal("USER_TOGGLE_STATUS", u.softDelete ? intl.formatMessage({ id: "users.reactivate" }) : intl.formatMessage({ id: "users.deactivate" }), u)}
+                            onHardDelete={(u) => openModal("USER_HARD_DELETE", intl.formatMessage({ id: "users.hard_delete_title" }), u)}
+                        />
 
-                <PaginationComponent 
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={(page) => loadUsers(searchTerm, page)}
-                />
+                        <PaginationComponent 
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={(page) => loadUsers(searchTerm, page)}
+                        />
+                    </>
+                )}
 
                 <DynamicModal show={modalConfig.show} onHide={closeModal} title={modalConfig.title}>
                     <ConfirmActionContent

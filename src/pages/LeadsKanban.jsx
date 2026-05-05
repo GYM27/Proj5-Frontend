@@ -93,19 +93,19 @@ const LeadsKanban = () => {
    * Utilizes debounce to minimize backend request frequency.
    */
   useEffect(() => {
-    // Debounce para otimizar os pedidos ao backend
+    // Debounce aumentado para 600ms para evitar pedidos excessivos enquanto o utilizador escreve
     const delay = setTimeout(() => {
         fetchMyLeads(userRole, {
             userId: filters.userId,
             softDeleted: isTrashMode,
             search: searchTerm,
-            page: 1, // Sempre página 1 quando os filtros mudam
+            page: 1, 
             size: 10 
         });
-    }, 300);
+    }, 600);
 
     return () => clearTimeout(delay);
-  }, [userRole, filters.userId, isTrashMode, searchTerm, fetchMyLeads]);
+  }, [userRole, filters.userId, isTrashMode, searchTerm]); // fetchMyLeads removido das dependências pois é estável (Zustand)
 
   // Update global header configuration
   useEffect(() => {
@@ -125,24 +125,7 @@ const LeadsKanban = () => {
 
   const handleSearchChange = (val) => {
     setSearchTerm(val);
-    // Ao pesquisar, forçamos a volta para a página 1
-    fetchMyLeads(userRole, {
-        userId: filters.userId,
-        softDeleted: isTrashMode,
-        search: val,
-        page: 1
-    });
   };
-
-  // Feedback visual enquanto os dados iniciais estão a ser carregados
-  if (loading && leads.length === 0) {
-    return (
-      <div className="text-center mt-5">
-        <Spinner animation="border" variant="primary" />
-        <p>{intl.formatMessage({ id: "leads.loading_panel" })}</p>
-      </div>
-    );
-  }
 
   return (
     <Container fluid className="mt-4 px-4">
@@ -153,33 +136,40 @@ const LeadsKanban = () => {
         setIsTrashMode={setIsTrashMode}
         isAdmin={isAdmin}
         filters={filters}
-        setFilters={(f) => { setFilters(f); fetchMyLeads(userRole, {...f, softDeleted: isTrashMode, page: 1}); }}
+        setFilters={setFilters}
         searchTerm={searchTerm}
         onSearchChange={handleSearchChange}
         users={users}
         actions={actions}
       />
 
-      <div
-        className="d-flex gap-3 pb-4"
-        style={{
-          overflowX: "auto",
-          minHeight: "80vh",
-          alignItems: "flex-start",
-        }}
-      >
-        {COLUMNS_DEF.map((col) => (
-          <KanbanColumn
-            key={col.id}
-            col={{ ...col, title: intl.formatMessage({ id: col.titleKey }) }}
-            leads={leads.filter((l) => l.state === col.id)}
-            isTrashMode={isTrashMode}
-            isAdmin={isAdmin}
-            onAddClick={actions.openCreate}
-            cardActions={actions.cardActions}
-          />
-        ))}
-      </div>
+      {loading && leads.length === 0 ? (
+          <div className="text-center mt-5">
+              <Spinner animation="border" variant="primary" />
+              <p>{intl.formatMessage({ id: "leads.loading_panel" })}</p>
+          </div>
+      ) : (
+          <div
+              className="d-flex gap-3 pb-4"
+              style={{
+                  overflowX: "auto",
+                  minHeight: "80vh",
+                  alignItems: "flex-start",
+              }}
+          >
+              {COLUMNS_DEF.map((col) => (
+                  <KanbanColumn
+                      key={col.id}
+                      col={{ ...col, title: intl.formatMessage({ id: col.titleKey }) }}
+                      leads={leads.filter((l) => l.state === col.id)}
+                      isTrashMode={isTrashMode}
+                      isAdmin={isAdmin}
+                      onAddClick={actions.openCreate}
+                      cardActions={actions.cardActions}
+                  />
+              ))}
+          </div>
+      )}
 
       {currentPage < totalPages && (
           <div className="d-flex justify-content-center mt-2 mb-5">
