@@ -125,11 +125,18 @@ export const useProfileManager = (targetUsername, isOwnProfile) => {
         },
         CHANGE_PASSWORD: async () => {
           // data aqui contém { currentPassword, password } enviados pelo modal
-          await userService.updateMyProfile({
-            ...formData, // Mantemos os dados atuais
+          // Enviamos apenas os campos que o UserUpdateDTO.java conhece
+          const payload = {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            cellphone: formData.cellphone,
+            photoUrl: formData.photoUrl,
+            language: formData.language,
             password: data.password,
             currentPassword: data.currentPassword
-          });
+          };
+          await userService.updateMyProfile(payload);
           closeModal();
           alert("Password alterada com sucesso!");
         }
@@ -139,7 +146,8 @@ export const useProfileManager = (targetUsername, isOwnProfile) => {
         await actionMap[modalConfig.type]();
       }
     } catch (err) {
-      alert("Erro na operação de administração.");
+      console.error("ERRO NA OPERAÇÃO:", err);
+      alert(err.message || "Erro ao realizar a operação.");
     }
   };
 
