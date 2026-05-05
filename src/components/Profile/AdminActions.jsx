@@ -1,5 +1,6 @@
 import React from "react";
 import { Button } from "react-bootstrap";
+import { FormattedMessage } from "react-intl";
 
 /**
  * COMPONENTE: AdminActions
@@ -14,7 +15,9 @@ const AdminActions = ({ isDeleted, onToggleStatus, onHardDelete }) => {
   return (
     <div className="d-flex flex-column gap-2 mt-4 border-top pt-4">
       {/* Título da secção para separar claramente as ações comuns das de Admin */}
-      <h5 className="text-secondary mb-3">Ações de Administração</h5>
+      <h5 className="text-secondary mb-3">
+        <FormattedMessage id="users.admin_actions" defaultMessage="Ações de Administração" />
+      </h5>
 
       {/* BOTÃO DESATIVAR / REATIVAR:
                 - Implementa o conceito de 'Soft Delete'.
@@ -28,9 +31,11 @@ const AdminActions = ({ isDeleted, onToggleStatus, onHardDelete }) => {
         <i
           className={`bi ${isDeleted ? "bi-check-circle" : "bi-person-dash"} me-2`}
         ></i>
-        {isDeleted
-          ? "Reativar Utilizador"
-          : "Desativar Utilizador"}
+        {isDeleted ? (
+          <FormattedMessage id="users.reactivate_user" defaultMessage="Reativar Utilizador" />
+        ) : (
+          <FormattedMessage id="users.deactivate_user" defaultMessage="Desativar Utilizador" />
+        )}
       </Button>
 
       {/* BOTÃO ELIMINAR PERMANENTE (REGRA A14):
@@ -39,7 +44,7 @@ const AdminActions = ({ isDeleted, onToggleStatus, onHardDelete }) => {
             */}
       <Button variant="danger" className="mt-2" onClick={onHardDelete}>
         <i className="bi bi-trash3 me-2"></i>
-        Eliminar Utilizador
+        <FormattedMessage id="users.delete_user" defaultMessage="Eliminar Utilizador" />
       </Button>
     </div>
   );

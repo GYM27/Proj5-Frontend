@@ -12,7 +12,9 @@ const ChatPage = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const usersData = await userService.getAllUsers();
+        // Solicitamos um tamanho grande para garantir que todos os colegas apareçam no Chat (Ex: 100)
+        const response = await userService.getAllUsers("", 1, 100);
+        const usersData = response.items || [];
         const filteredUsers = usersData.filter((u) => u.username !== username);
         setUsers(filteredUsers);
 

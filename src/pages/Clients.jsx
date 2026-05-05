@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useState, useMemo} from "react";
 import {Container, Spinner, Row, Col} from "react-bootstrap";
 import {useClientStore} from "../stores/ClientsStore";
 import {useUserStore} from "../stores/UserStore";
@@ -16,51 +16,71 @@ import ClientsHeader from "../components/Clients/ClientsHeader";
 import ClientCard from "../components/Clients/ClientCard";
 import DynamicModal from "../Modal/DynamicModal.jsx";
 import EditClientForm from "../components/Clients/EditClientForm";
+import PaginationComponent from "../components/Shared/PaginationComponent";
 import "../App.css";
 
 /**
- * COMPONENTE: Clients (Página Principal de Clientes)
- * ------------------------------------------------
- * DESCRIÇÃO: Gere a visualização, filtragem e ciclo de vida dos clientes.
- * FUNCIONALIDADES: Alternância entre vista ativa/lixeira, filtragem por utilizador (Admin),
- * e execução de ações individuais ou em massa (Bulk).
+ * GESTÃO DE CARTEIRA DE CLIENTES
+ * Interface para visualização, filtragem e CRUD de clientes com suporte a paginação no backend.
  */
 const Clients = () => {
     const intl = useIntl();
-    // 1. ESTADOS E STORES (CRITÉRIO: GESTÃO DE ESTADO):
-    const clientStore = useClientStore();
-    const {userRole} = useUserStore();
+    const {
+        clients,
+        loading,
+        error,
+        fetchClients,
+        currentPage,
+        totalPages,
+        totalItems,
+        deleteClient,
+        restoreClient,
+        handleBulkAction
+    } = useClientStore();
+    
+    const { userRole, username: currentUsername } = useUserStore();
     const isAdmin = userRole === "ADMIN";
 
     const [isTrashMode, setIsTrashMode] = useState(false);
     const [filters, setFilters] = useState({userId: ""});
+    const [searchTerm, setSearchTerm] = useState("");
     const [users, setUsers] = useState([]);
 
-    // 2. GESTÃO DE MODAIS E CABEÇALHO:
     const {modalConfig, openModal, closeModal} = useModalManager();
-    const {setHeader} = useHeaderStore();
+    const setHeader = useHeaderStore((state) => state.setHeader);
 
-    // Injetamos as dependências para obter as ações prontas para serem distribuídas pelos Cards e Header.
-    const {clients: actions} = useResourceActions(openModal, filters, {clientStore, userRole});
+    const resourceParams = useMemo(() => ({ 
+        clientStore: { deleteClient, restoreClient, handleBulkAction }, 
+        userRole 
+    }), [deleteClient, restoreClient, handleBulkAction, userRole]);
+    
+    const { clients: actions } = useResourceActions(openModal, filters, resourceParams);
 
-    // 3. CARREGAMENTO DE DADOS (CRITÉRIO: FILTRAGEM NO SERVIDOR):
-    // Carrega a lista de utilizadores apenas se for Admin (para o filtro de responsável).
+    // Carregamento da lista de utilizadores para o filtro de responsáveis (apenas Admin)
     useEffect(() => {
-        if (isAdmin) userService.getAllUsers().then(setUsers).catch(console.error);
+        if (isAdmin) {
+            userService.getAllUsers("", 1, 100).then(res => setUsers(res.items || [])).catch(console.error);
+        }
     }, [isAdmin]);
 
     /**
-     * EFEITO DE SINCRONIZAÇÃO:
-     * Dispara um novo fetch sempre que o filtro de utilizador ou o modo lixeira muda.
-     * Isto garante que o processamento de dados é feito no Backend (Java/PostgreSQL).
+     * Sincronização de dados baseada em filtros, pesquisa e estado da lixeira.
      */
     useEffect(() => {
-        clientStore.fetchClients(userRole, {
-            userId: filters.userId || null,
-            showTrash: isTrashMode,
-        });
+        const delay = setTimeout(() => {
+            fetchClients(userRole, {
+                userId: filters.userId || null,
+                showTrash: isTrashMode,
+                search: searchTerm,
+                page: 1 // Ao mudar filtros/pesquisa, resetamos sempre para a página 1
+            });
+        }, 300);
 
-        // ATUALIZA O CABEÇALHO GLOBAL
+        return () => clearTimeout(delay);
+    }, [userRole, filters.userId, isTrashMode, searchTerm, fetchClients]);
+
+    // Atualização das estatísticas e metadados no cabeçalho global
+    useEffect(() => {
         const selectedUser = users.find((u) => String(u.id) === String(filters.userId));
         const displayName = selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : intl.formatMessage({ id: "forms.everyone" });
 
@@ -70,15 +90,28 @@ const Clients = () => {
             title: intl.formatMessage({ id: isTrashMode ? "clients.trash_title" : "clients.title" }),
             subtitle: intl.formatMessage(
                 { id: subtitleKey },
-                { count: clientStore.clients.length, responsible: displayName }
+                { count: totalItems, responsible: displayName }
             ),
             isTrash: isTrashMode,
-            showStats: false
+            showStats: false,
+            actions: actions 
         });
-    }, [userRole, filters.userId, isTrashMode, clientStore.fetchClients, clientStore.clients.length, users, setHeader]);
+    }, [isTrashMode, totalItems, users, setHeader, intl, isAdmin, filters.userId, actions]);
+
+    const handleSearchChange = (val) => {
+        setSearchTerm(val);
+        // Ao mudar a pesquisa, voltamos para a página 1 (através da store se necessário, mas aqui apenas resetamos o estado se a store permitir)
+        // Como o currentPage está na store, vamos forçar o fetch da página 1
+        clientStore.fetchClients(userRole, {
+            userId: filters.userId || null,
+            showTrash: isTrashMode,
+            search: val,
+            page: 1
+        });
+    };
 
     // FEEDBACK VISUAL DE CARREGAMENTO
-    if (clientStore.loading && clientStore.clients.length === 0) {
+    if (loading && clients.length === 0) {
         return (
             <Container className="mt-4 text-center">
                 <Spinner animation="border" variant="primary"/>
@@ -95,9 +128,11 @@ const Clients = () => {
                 setIsTrashMode={setIsTrashMode}
                 isAdmin={isAdmin}
                 filters={filters}
-                setFilters={setFilters}
+                setFilters={(f) => { setFilters(f); clientStore.fetchClients(userRole, {...f, showTrash: isTrashMode, page: 1}); }}
                 users={users}
-                hasClients={clientStore.clients.length > 0}
+                searchTerm={searchTerm}
+                onSearchChange={handleSearchChange}
+                hasClients={clients.length > 0}
                 actions={actions}
             />
 
@@ -105,7 +140,7 @@ const Clients = () => {
                 Usa o sistema de grelha do Bootstrap para adaptar o número de colunas ao ecrã.
             */}
             <div>
-                {clientStore.clients.length === 0 ? (
+                {clients.length === 0 ? (
                     /* EMPTY STATE: Feedback visual quando não há resultados */
                     <div className="text-center p-5 bg-light rounded border">
                         <i className="bi bi-folder2-open display-4 text-muted"></i>
@@ -117,7 +152,7 @@ const Clients = () => {
                     </div>
                 ) : (
                     <Row className="g-3">
-                        {clientStore.clients.map((client) => (
+                        {clients.map((client) => (
                             <Col key={client.id} xs={12} sm={6} md={4} lg={3}>
                                 <ClientCard
                                     client={client}
@@ -129,6 +164,17 @@ const Clients = () => {
                         ))}
                     </Row>
                 )}
+
+                <PaginationComponent 
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={(page) => fetchClients(userRole, {
+                        userId: filters.userId || null,
+                        showTrash: isTrashMode,
+                        search: searchTerm,
+                        page: page
+                    })}
+                />
             </div>
 
             {/* 3. MODAL DINÂMICO ÚNICO (Lógica Centralizada):
@@ -160,12 +206,12 @@ const Clients = () => {
                             const currentFilters = {userId: filters.userId || null, showTrash: isTrashMode};
 
                             const actionMap = {
-                                "SOFT_DELETE": () => clientStore.deleteClient(data.id, false), // Regra A9
-                                "HARD_DELETE": () => clientStore.deleteClient(data.id, true),  // Regra A14
-                                "BULK_SOFT_DELETE": () => clientStore.handleBulkAction(data.userId, "DEACTIVATE_ALL", userRole, currentFilters),
-                                "BULK_HARD_DELETE": () => clientStore.handleBulkAction(data.userId, "EMPTY_TRASH", userRole, currentFilters),
-                                "RESTORE_CLIENT": () => clientStore.restoreClient(data.id, data, userRole),
-                                "RESTORE_ALL": () => clientStore.handleBulkAction(data.userId, "RESTORE_ALL", userRole, {
+                                "SOFT_DELETE": () => deleteClient(data.id, false), // Regra A9
+                                "HARD_DELETE": () => deleteClient(data.id, true),  // Regra A14
+                                "BULK_SOFT_DELETE": () => handleBulkAction(data.userId, "DEACTIVATE_ALL", userRole, currentFilters),
+                                "BULK_HARD_DELETE": () => handleBulkAction(data.userId, "EMPTY_TRASH", userRole, currentFilters),
+                                "RESTORE_CLIENT": () => restoreClient(data.id, data, userRole),
+                                "RESTORE_ALL": () => handleBulkAction(data.userId, "RESTORE_ALL", userRole, {
                                     userId: filters.userId,
                                     softDeleted: isTrashMode
                                 })

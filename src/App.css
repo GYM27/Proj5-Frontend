@@ -100,6 +100,40 @@
 /* 6. COMPONENTES (CARDS & UTILS) */
 .kanban-card,
 .clientes-card {
+  transition: background-color 0.2s ease;
+}
+
+/* PAGINAÇÃO PREMIUM */
+.pagination-custom .page-item .page-link {
+    border: none;
+    color: #4a5568;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(5px);
+    margin: 0 3px;
+    border-radius: 8px !important;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.pagination-custom .page-item.active .page-link {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
+}
+
+.pagination-custom .page-item:not(.active):hover .page-link {
+    background: #edf2f7;
+    transform: translateY(-2px);
+}
+
+.pagination-custom .page-item.disabled .page-link {
+    background: transparent;
+    opacity: 0.5;
+}
+
+.kanban-card,
+.clientes-card {
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;

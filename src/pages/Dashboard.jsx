@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useUserStore } from "../stores/UserStore";
 import { useHeaderStore } from "../stores/HeaderStore";
 import api from "../services/api";
+import { userService } from "../services/userService";
 import { Form } from "react-bootstrap";
 import "../App.css";
 import { FormattedMessage, useIntl } from "react-intl";
@@ -53,13 +54,11 @@ const Dashboard = () => {
   // Carregar lista de utilizadores para o filtro (Só Admin)
   useEffect(() => {
     if (userRole === "ADMIN") {
-      api("/users")
-        .then(data => {
-          // Validação defensiva: garantir que data é uma lista
-          if (Array.isArray(data)) {
-            const activeOnly = data.filter(u => u.state === "ACTIVE" || !u.state); 
-            setUsers(activeOnly);
-          }
+      userService.getAllUsers("", 1, 100)
+        .then(response => {
+          const usersData = response.items || [];
+          const activeOnly = usersData.filter(u => u.state === "ACTIVE" || !u.state); 
+          setUsers(activeOnly);
         })
         .catch(err => console.error("Erro ao carregar utilizadores:", err));
     }

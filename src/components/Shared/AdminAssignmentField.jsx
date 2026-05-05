@@ -24,8 +24,8 @@ const AdminAssignmentField = ({ isAdmin, value, onChange, label = "Atribuir Resp
      */
     useEffect(() => {
         if (isAdmin) {
-            userService.getAllUsers()
-                .then(setUsers)
+            userService.getAllUsers("", 1, 100)
+                .then((res) => setUsers(res.items || []))
                 .catch((err) => console.error("Erro ao carregar utilizadores para atribuição:", err));
         }
     }, [isAdmin]);

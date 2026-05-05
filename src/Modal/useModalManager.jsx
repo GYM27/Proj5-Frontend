@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 /**
  * HOOK PERSONALIZADO: useModalManager
@@ -30,7 +30,7 @@ export const useModalManager = () => {
      * Altera apenas a visibilidade para 'false', preservando os dados
      * momentaneamente para evitar saltos visuais durante a animação de fecho.
      */
-    const closeModal = () => setModalConfig(prev => ({ ...prev, show: false }));
+    const closeModal = useCallback(() => setModalConfig(prev => ({ ...prev, show: false })), []);
 
     /**
      * FUNÇÃO: openModal
@@ -40,8 +40,8 @@ export const useModalManager = () => {
      * @param {string} title - O título da janela.
      * @param {Object} data - Os dados do item alvo (opcional).
      */
-    const openModal = (type, title, data = null) =>
-        setModalConfig({ show: true, type, title, data });
+    const openModal = useCallback((type, title, data = null) =>
+        setModalConfig({ show: true, type, title, data }), []);
 
     // Exporta o estado e as funções controladoras para serem usadas por qualquer componente.
     return { modalConfig, openModal, closeModal };

@@ -1,6 +1,6 @@
 import React from "react";
 import { Form, Row, Col, Button, Spinner } from "react-bootstrap";
-import { FormattedMessage } from "react-intl";
+import { FormattedMessage, useIntl } from "react-intl";
 
 const ProfileForm = ({
   formData,
@@ -12,6 +12,7 @@ const ProfileForm = ({
   hasChanges,
   openModal,
 }) => {
+  const intl = useIntl();
   const canEdit = isOwnProfile || isAdmin;
 
   return (
@@ -70,8 +71,8 @@ const ProfileForm = ({
               onChange={handleChange}
               disabled={!canEdit}
             >
-              <option value="pt">Português (PT)</option>
-              <option value="en">English (EN)</option>
+              <option value="pt">{intl.formatMessage({ id: "profile.lang.pt" })}</option>
+              <option value="en">{intl.formatMessage({ id: "profile.lang.en" })}</option>
             </Form.Select>
           </Form.Group>
         </Col>
@@ -83,14 +84,16 @@ const ProfileForm = ({
                 <div className="bg-primary bg-opacity-10 p-2 rounded-3 me-3">
                   <i className="bi bi-shield-lock-fill text-primary"></i>
                 </div>
-                <h6 className="fw-bold mb-0">Segurança da Conta</h6>
+                <h6 className="fw-bold mb-0">
+                  <FormattedMessage id="profile.security" defaultMessage="Segurança da Conta" />
+                </h6>
               </div>
               <Button
                 variant="outline-primary"
                 size="sm"
                 className="rounded-pill px-3"
                 onClick={() =>
-                  openModal("CHANGE_PASSWORD", "Alterar Password", {})
+                  openModal("CHANGE_PASSWORD", intl.formatMessage({ id: "profile.change_password_modal" }), {})
                 }
               >
                 <i className="bi bi-key me-2"></i> <FormattedMessage id="profile.change_password" defaultMessage="Mudar Password" />

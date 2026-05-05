@@ -23,12 +23,11 @@ export const userService = {
     },
 
     /**
-     * Listagem de Utilizadores com filtro no Backend (Requisito de Projeto)
+     * Recupera a lista global de utilizadores com suporte a pesquisa e paginação no backend.
      */
-    getAllUsers: async (search = "") => {
-        const url = search ? `/users?search=${encodeURIComponent(search)}` : "/users";
-        const response = await api(url, "GET");
-        return Array.isArray(response) ? response : [];
+    getAllUsers: async (search = "", page = 1, size = 10) => {
+        const url = `/users?search=${encodeURIComponent(search)}&page=${page}&size=${size}`;
+        return await api(url, "GET");
     },
 
     updateMyProfile: async (userData) => {

@@ -3,13 +3,13 @@ import { leadService } from "../services/leadService";
 
 /**
  * STORE: useLeadStore (Zustand)
- * ----------------------------
- * DESCRIÇÃO: Gere o estado global das Leads (Oportunidades).
- * FUNCIONALIDADE: Centraliza a listagem do Kanban, o processamento de datas,
- * as transições de estado e as operações administrativas de lixeira.
+ * Gere o estado global das leads, incluindo o quadro Kanban e paginação incremental.
  */
 export const useLeadStore = create((set, get) => ({
   leads: [],
+  currentPage: 1,
+  totalPages: 1,
+  totalItems: 0,
   loading: false,
   error: null,
   viewingUserName: "",
@@ -37,7 +37,6 @@ export const useLeadStore = create((set, get) => ({
           } else if (tempDate.toDateString() === yesterday.toDateString()) {
             finalDate = "Ontem";
           } else {
-            // PADRÃO ISO8601 (YYYY-MM-DD)
             finalDate = tempDate.toISOString().split("T")[0];
           }
         }
@@ -50,16 +49,22 @@ export const useLeadStore = create((set, get) => ({
       };
     }),
 
-  /** * ACÇÃO: fetchMyLeads
-   * Procura as leads na API e aplica a transformação de dados antes de guardar no estado.
+  /**
+   * Procura as leads do utilizador autenticado aplicando filtros iniciais.
    */
   fetchMyLeads: async (userRole, filters = {}) => {
     set({ loading: true, error: null });
     try {
-      const data = await leadService.getLeads(userRole, filters);
-      const processed = get()._processLeads(data);
+      const response = await leadService.getLeads(userRole, filters);
+      
+      // O response agora vem do PaginatedResponseDTO { items, totalPages, totalItems, ... }
+      const processed = get()._processLeads(response.items || []);
+      
       set({
         leads: processed,
+        currentPage: response.currentPage || 1,
+        totalPages: response.totalPages || 1,
+        totalItems: response.totalItems || 0,
         loading: false,
         viewingUserName: processed.length > 0 ? processed[0].name : "",
       });
@@ -68,9 +73,33 @@ export const useLeadStore = create((set, get) => ({
     }
   },
 
-  /** * GESTÃO DE CICLO DE VIDA:
-   * Adiciona e edita leads, atualizando o estado local imediatamente (Optimistic UI)
-   * para uma experiência de utilizador mais fluida.
+  /**
+   * Carrega a página seguinte de leads e anexa-as ao estado atual (infinite loading).
+   */
+  loadMoreLeads: async (userRole, filters = {}) => {
+    const { currentPage, totalPages, leads } = get();
+    if (currentPage >= totalPages) return;
+
+    set({ loading: true });
+    try {
+      const nextPage = currentPage + 1;
+      const response = await leadService.getLeads(userRole, { ...filters, page: nextPage });
+      const processed = get()._processLeads(response.items || []);
+      
+      set({
+        leads: [...leads, ...processed],
+        currentPage: nextPage,
+        totalPages: response.totalPages || 1,
+        totalItems: response.totalItems || 0,
+        loading: false,
+      });
+    } catch (err) {
+      set({ error: err.message, loading: false });
+    }
+  },
+
+  /**
+   * Adiciona ou edita leads com atualização imediata do estado local (Optimistic UI).
    */
   addLead: async (leadDto, userRole, targetUserId = null) => {
     set({ loading: true, error: null });
@@ -131,8 +160,7 @@ export const useLeadStore = create((set, get) => ({
   restoreLead: async (id, leadData) => {
     set({ loading: true });
     try {
-      // 1. Criamos um payload "limpo", enviando APENAS o que o LeadDTO do Java conhece
-      // Ignoramos campos visuais como o 'formattedDate'
+      // Limpeza do payload para garantir compatibilidade com o DTO do backend
       const cleanPayload = {
         id: leadData.id,
         title: leadData.title,
@@ -155,8 +183,8 @@ export const useLeadStore = create((set, get) => ({
     }
   },
 
-  /** * ACÇÕES EM MASSA (BULK OPERATIONS):
-   * Orquestra a limpeza ou restauro de grandes volumes de leads para um utilizador.
+  /**
+   * Manages administrative bulk operations for a specific user.
    */
   handleBulkAction: async (
     userId,
@@ -181,8 +209,7 @@ export const useLeadStore = create((set, get) => ({
           set({ loading: false });
           return false;
       }
-      // ATUALIZAÇÃO LOCAL (OTIMIZAÇÃO): 
-      // Em vez de pedir tudo ao servidor, limpamos localmente o que foi alterado.
+      // Limpeza local do estado após execução bem-sucedida no backend
       set((state) => ({
         leads: [],
         loading: false

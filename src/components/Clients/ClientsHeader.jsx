@@ -14,7 +14,8 @@ const ClientsHeader = ({
                            setFilters,
                            users,
                            hasClients,
-                           clientsCount,
+                           searchTerm,
+                           onSearchChange,
                            actions,
                        }) => {
     const intl = useIntl();
@@ -24,6 +25,18 @@ const ClientsHeader = ({
 
     return (
         <HeaderActions>
+            {/* PESQUISA GLOBAL (Requisito Backend Filtering) */}
+            <div className="d-flex align-items-center gap-2 me-3">
+                <Form.Control
+                    type="text"
+                    size="sm"
+                    placeholder={intl.formatMessage({ id: "forms.search" }) || "Procurar..."}
+                    style={{ width: "200px" }}
+                    value={searchTerm}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                />
+            </div>
+
             {/* FILTRO DE RESPONSÁVEL */}
             {isAdmin && (
                 <div className="d-flex align-items-center gap-2 me-2 border-end pe-3">

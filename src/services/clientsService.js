@@ -2,52 +2,45 @@ import api from "./api";
 
 /**
  * SERVIÇO: clientsService
- * ----------------------
- * DESCRIÇÃO: Encapsula todas as chamadas à API JAX-RS para a entidade Client.
- * FUNCIONALIDADE: Implementa a lógica de negócio de clientes, incluindo
- * filtragem por utilizador, gestão de lixeira (Soft Delete) e remoção permanente.
+ * Gere a comunicação com os endpoints da API para a entidade Client.
+ * Suporta filtragem avançada, gestão de lixeira e operações administrativas.
  */
 export const clientsService = {
 
   /**
-   * ROTEADOR CENTRAL DE LISTAGEM (PADRÃO DE ESTRATÉGIA):
-   * Este método decide qual o endpoint chamar baseando-se no Role e no estado (Lixeira ou Ativo).
-   * Resolve a complexidade de rotas múltiplas num único ponto de entrada.
+   * Recupera a lista de clientes com base no perfil do utilizador e filtros.
+   * Gerencia a lógica de roteamento entre clientes ativos e lixeira.
    */
   getClients: async (userRole, filters = {}) => {
-    const { userId, showTrash } = filters;
-
-    // --- 1. GESTÃO DE LIXEIRA (REGRA A9): ---
+    const { userId, showTrash, search, page = 1, size = 10 } = filters;
+    
+    const params = new URLSearchParams();
+    if (search) params.append("search", search);
+    params.append("page", page);
+    params.append("size", size);
+ 
+    // Gestão de visualização da lixeira (Eliminação Lógica)
     if (showTrash) {
       if (userRole === "ADMIN") {
-        if (userId) {
-          // Admin consulta a lixeira de um colaborador específico (@GET /clients/user/{userId}/trash)
-          return await api(`/clients/user/${userId}/trash`, "GET");
-        } else {
-          // Admin consulta a lixeira global do sistema (@GET /clients/trash)
-          return await api("/clients/trash", "GET");
-        }
+        const url = userId 
+          ? `/clients/user/${userId}/trash?${params.toString()}` 
+          : `/clients/trash?${params.toString()}`;
+        return await api(url, "GET");
       } else {
-        // Utilizador Normal consulta apenas os seus próprios dados eliminados (@GET /clients/me-trash)
-        return await api("/clients/me-trash", "GET");
+        return await api(`/clients/me-trash?${params.toString()}`, "GET");
       }
     }
 
-    // --- 2. GESTÃO DE CLIENTES ATIVOS: ---
-    const params = new URLSearchParams();
+    // Gestão de clientes ativos (com suporte a filtro de responsável para Admin)
     if (userRole === "ADMIN" && userId) {
-      // Injeta o ID do utilizador alvo como Query Parameter para filtragem no SQL.
       params.append("userId", userId);
     }
-
-    const queryString = params.toString();
-    const url = queryString ? `/clients?${queryString}` : "/clients";
-
-    return await api(url, "GET");
+ 
+    return await api(`/clients?${params.toString()}`, "GET");
   },
 
-  /** * OPERAÇÕES CRUD (CREATE, READ, UPDATE, DELETE):
-   * Mapeamento direto para os métodos do ClientResource no Java.
+  /**
+   * Operações de criação e atualização de clientes.
    */
 
   // Registo de novo cliente pelo próprio utilizador
@@ -65,7 +58,9 @@ export const clientsService = {
     return await api(`/clients/${id}`, "PUT", clientDto);
   },
 
-  /** * CICLO DE VIDA E ELIMINAÇÃO (REGRAS A9 e A14): */
+  /**
+   * Gestão do ciclo de vida e estados de eliminação.
+   */
 
   // Soft Delete: Marca o cliente como 'deleted' sem o remover da base de dados.
   softDeleteClient: async (id) => {
@@ -82,8 +77,8 @@ export const clientsService = {
     return await api(`/clients/${id}/permanent`, "DELETE");
   },
 
-  /** * OPERAÇÕES EM MASSA (BULK ACTIONS):
-   * Implementam a gestão rápida de grandes volumes de dados para Administradores.
+  /**
+   * Operações administrativas em massa (Bulk Actions).
    */
 
   // Desativa todos os clientes de um utilizador específico de uma só vez.

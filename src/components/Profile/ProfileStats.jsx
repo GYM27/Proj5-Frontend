@@ -18,7 +18,9 @@ const ProfileStats = ({ stats }) => {
           <Card className="border-0 bg-primary bg-opacity-10 h-100 rounded-4">
             <Card.Body className="text-center p-3">
               <h3 className="fw-bold text-primary mb-0">{stats.leads || 0}</h3>
-              <small className="text-primary fw-medium">Total Leads</small>
+              <small className="text-primary fw-medium">
+                <FormattedMessage id="profile.stats.total" defaultMessage="Total Leads" />
+              </small>
             </Card.Body>
           </Card>
         </Col>
@@ -28,7 +30,9 @@ const ProfileStats = ({ stats }) => {
           <Card className="border-0 bg-success bg-opacity-10 h-100 rounded-4">
             <Card.Body className="text-center p-3">
               <h3 className="fw-bold text-success mb-0">{stats.ganhos || 0}</h3>
-              <small className="text-success fw-medium">Ganhas</small>
+              <small className="text-success fw-medium">
+                <FormattedMessage id="profile.stats.won" defaultMessage="Ganhas" />
+              </small>
             </Card.Body>
           </Card>
         </Col>
@@ -38,7 +42,9 @@ const ProfileStats = ({ stats }) => {
           <Card className="border-0 bg-danger bg-opacity-10 h-100 rounded-4">
             <Card.Body className="text-center p-3">
               <h3 className="fw-bold text-danger mb-0">{stats.perdidos || 0}</h3>
-              <small className="text-danger fw-medium">Perdidas</small>
+              <small className="text-danger fw-medium">
+                <FormattedMessage id="profile.stats.lost" defaultMessage="Perdidas" />
+              </small>
             </Card.Body>
           </Card>
         </Col>

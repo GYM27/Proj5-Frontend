@@ -2,47 +2,46 @@ import api from './api';
 
 /**
  * SERVIÇO: leadService
- * -------------------
- * DESCRIÇÃO: Gere a comunicação com os endpoints JAX-RS para a entidade Lead.
- * FUNCIONALIDADE: Suporta operações de CRUD, transições de estado no Kanban,
- * filtragem administrativa e gestão de lixeira (Soft/Hard Delete).
+ * Gere a comunicação com os endpoints da API para a entidade Lead.
+ * Inclui suporte para CRUD, transições de estado, filtragem administrativa e gestão de lixeira.
  */
 export const leadService = {
 
   /**
-   * CONSULTA DE LEADS (FILTRAGEM DINÂMICA - 3%):
-   * Constrói a QueryString com base no Role e nos filtros ativos (Estado, Utilizador, Lixeira).
-   * Diferencia os endpoints '/leads' (Self) e '/leads/admin' (Global/Staff).
+   * Consulta leads com base no perfil e filtros aplicados.
+   * Suporta filtragem por estado, proprietário, lixeira, pesquisa e paginação.
    */
   getLeads: async (role, filters = {}) => {
     const isAdmin = role === "ADMIN";
     const endpoint = isAdmin ? "/leads/admin" : "/leads";
 
     const params = new URLSearchParams();
-
-    // FILTRO DE ESTADO: Essencial para a separação das colunas no Kanban (Novo, Proposta, etc.)
+    
+    // Filtros de estado e lixeira
     if (filters.state) params.append("state", filters.state);
 
-    // FILTRO DE LIXEIRA (REGRA A9):
-    // Boolean que define se o Java deve retornar leads ativas ou em Soft Delete.
     if (filters.softDeleted !== undefined) {
       params.append("softDeleted", filters.softDeleted);
     }
 
-    // FILTRO DE ATRIBUIÇÃO (EXCLUSIVO ADMIN):
-    // Permite que o Admin veja as leads de um colaborador específico no seu painel.
+    // Filtro de atribuição (exclusivo para perfil administrativo)
     if (isAdmin && filters.userId) {
       params.append("userId", filters.userId);
     }
 
+    // Parâmetros de paginação e termo de pesquisa
+    if (filters.search) params.append("search", filters.search);
+    params.append("page", filters.page || 1);
+    params.append("size", filters.size || 20);
+
     const queryString = params.toString();
-    const finalUrl = queryString ? `${endpoint}?${queryString}` : endpoint;
+    const finalUrl = `${endpoint}?${queryString}`;
 
     return await api(finalUrl);
   },
 
-  /** * CRIAÇÃO E ATRIBUIÇÃO (REGRA DE NEGÓCIO):
-   * Permite criar leads para o próprio ou delegar para outro utilizador (se Admin).
+  /**
+   * Cria uma nova lead. Permite delegação de proprietário caso o utilizador seja Admin.
    */
   createLead: async (leadData, role, targetUserId = null) => {
     if (role === "ADMIN" && targetUserId) {
@@ -52,16 +51,16 @@ export const leadService = {
     return await api("/leads", "POST", leadData);
   },
 
-  /** * ATUALIZAÇÃO (EDIT):
-   * Suporta a edição de dados e a mudança de coluna (state) no Kanban.
+  /**
+   * Atualiza os dados de uma lead existente.
    */
   updateLead: async (id, leadData, role) => {
     const endpoint = role === "ADMIN" ? `/leads/admin/${id}` : `/leads/${id}`;
     return await api(endpoint, "PUT", leadData);
   },
 
-  /** * ELIMINAÇÃO (REGRAS A9 e A14):
-   * Implementa a lógica de decisão entre Soft Delete (Lixeira) e Hard Delete (Permanente).
+  /**
+   * Remove uma lead do sistema. Suporta eliminação lógica ou definitiva.
    */
   deleteLead: async (id, role, permanent = false) => {
     // REGRA A14: Apenas Admin pode realizar o Hard Delete definitivo da base de dados PostgreSQL.
@@ -72,8 +71,8 @@ export const leadService = {
     return await api(`/leads/${id}`, "DELETE");
   },
 
-  /** * GESTÃO MANUAL DE ESTADO DE LIXEIRA:
-   * Funções que utilizam o 'adminSuperEdit' do Java para inverter o bit 'softDeleted'.
+  /**
+   * Métodos para recuperação ou marcação individual para eliminação lógica.
    */
   softDeleteLead: async (leadId) => {
     const payload = { softDeleted: true };
@@ -86,8 +85,8 @@ export const leadService = {
     return await api(`/leads/admin/${leadId}`, "PUT", payload);
   },
 
-  /** * OPERAÇÕES EM MASSA (ADMIN - BULK ACTIONS):
-   * Métodos de conveniência para limpar ou restaurar volumes de dados de um utilizador.
+  /**
+   * Executa operações em massa (bulk actions) para leads de um utilizador específico.
    */
   softDeleteAllFromUser: async (userId) => {
     return await api(`/leads/admin/${userId}/softdeleteall`, "POST");

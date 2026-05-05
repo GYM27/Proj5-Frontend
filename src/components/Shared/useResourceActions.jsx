@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 /**
@@ -19,7 +20,7 @@ export const useResourceActions = (openModal, filters, stores) => {
   const isAdmin = userRole === "ADMIN";
 
   // --- LÓGICA DE LEADS (GESTÃO DE OPORTUNIDADES) ---
-  const leadActions = {
+  const leadActions = useMemo(() => ({
     // Ações Base: Disponíveis para todos os colaboradores.
     onView: (lead) => navigate(`/leads/${lead.id}`),
     onEdit: (lead) => openModal("EDIT_LEAD", "Editar Lead", lead),
@@ -59,10 +60,10 @@ export const useResourceActions = (openModal, filters, stores) => {
             userId: filters?.userId,
           })
       : undefined,
-  };
+  }), [isAdmin, navigate, openModal, filters?.userId]);
 
   // --- LÓGICA DE CLIENTES (GESTÃO DE ORGANIZAÇÕES) ---
-  const clientActions = {
+  const clientActions = useMemo(() => ({
     onView: (client) => navigate(`/clients/${client.id}`),
     onEdit: (client) => openModal("EDIT_CLIENT", "Editar Cliente", client),
     onDelete: (client) => openModal("SOFT_DELETE", "Remover Cliente", client),
@@ -90,7 +91,7 @@ export const useResourceActions = (openModal, filters, stores) => {
             userId: filters?.userId,
           })
       : undefined,
-  };
+  }), [isAdmin, navigate, openModal, filters?.userId]);
 
   /**
    * RETORNO ESTRUTURADO:
@@ -98,7 +99,7 @@ export const useResourceActions = (openModal, filters, stores) => {
    * que é um subconjunto formatado especificamente para ser consumido pelos
    * componentes LeadCard e ClientCard.
    */
-  return {
+  return useMemo(() => ({
     leads: {
       ...leadActions,
       cardActions: {
@@ -106,7 +107,6 @@ export const useResourceActions = (openModal, filters, stores) => {
         onEdit: leadActions.onEdit,
         onDelete: leadActions.onDelete,
         onRestore: leadActions.onRestore,
-        onHardDelete: leadActions.onHardDelete,
       },
     },
     clients: {
@@ -116,8 +116,7 @@ export const useResourceActions = (openModal, filters, stores) => {
         onEdit: clientActions.onEdit,
         onDelete: clientActions.onDelete,
         onRestore: clientActions.onRestore,
-        onHardDelete: clientActions.onHardDelete,
       },
     },
-  };
+  }), [leadActions, clientActions]);
 };

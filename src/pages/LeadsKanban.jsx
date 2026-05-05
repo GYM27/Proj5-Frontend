@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Container, Spinner } from "react-bootstrap";
+import React, { useEffect, useState, useMemo } from "react";
+import { Container, Spinner, Button } from "react-bootstrap";
 import { useLeadStore } from "../stores/LeadsStore";
 import { useUserStore } from "../stores/UserStore";
 import { useHeaderStore } from "../stores/HeaderStore"; // Novo
@@ -16,10 +16,11 @@ import KanbanHeader from "../components/Leads/KanbanHeader.jsx";
 import KanbanColumn from "../components/Leads/KanbanColumn";
 import DynamicModal from "../Modal/DynamicModal.jsx";
 import EditLeadForm from "../components/Leads/EditLeadForm";
+import PaginationComponent from "../components/Shared/PaginationComponent";
 
 /**
- * CONFIGURAÇÃO DE COLUNAS:
- * Centralizamos os estados do funil de vendas.
+ * CONFIGURAÇÃO DAS COLUNAS DO KANBAN
+ * Define os estados do funil de vendas, chaves de tradução e cores visuais.
  */
 const COLUMNS_DEF = [
   { id: 1, titleKey: "leads.column.new", color: "#007bff" },
@@ -31,43 +32,47 @@ const COLUMNS_DEF = [
 
 const LeadsKanban = () => {
   const intl = useIntl();
-  // 1. ESTADOS E STORES (Seletores Atómicos para evitar o loop infinito)
+  
   const leads = useLeadStore((state) => state.leads);
   const loading = useLeadStore((state) => state.loading);
 
-  // Extração direta das funções da store (são estáveis e não causam re-renders)
+  const currentPage = useLeadStore((state) => state.currentPage);
+  const totalPages = useLeadStore((state) => state.totalPages);
+  const totalItems = useLeadStore((state) => state.totalItems);
+
+  // Store actions for data manipulation
   const fetchMyLeads = useLeadStore((state) => state.fetchMyLeads);
+  const loadMoreLeads = useLeadStore((state) => state.loadMoreLeads);
   const deleteLead = useLeadStore((state) => state.deleteLead);
   const handleBulkAction = useLeadStore((state) => state.handleBulkAction);
   const restoreLead = useLeadStore((state) => state.restoreLead);
 
-  // Store do Utilizador
   const userRole = useUserStore((state) => state.userRole);
   const currentUserName = useUserStore((state) => state.firstName);
   const isAdmin = userRole === "ADMIN";
 
   const [users, setUsers] = useState([]);
   const [filters, setFilters] = useState({ userId: "", state: "" });
+  const [searchTerm, setSearchTerm] = useState("");
   const [isTrashMode, setIsTrashMode] = useState(false);
 
-  // 2. GESTÃO DE MODAIS E CABEÇALHO
   const { modalConfig, openModal, closeModal } = useModalManager();
-  const { setHeader } = useHeaderStore();
+  const setHeader = useHeaderStore((state) => state.setHeader);
 
-  // 3. AÇÕES CENTRALIZADAS
-  // Recriamos um objeto com as ações para não quebrar o hook partilhado
-  const storeActions = {
+  const storeActions = useMemo(() => ({
     fetchMyLeads,
     deleteLead,
     handleBulkAction,
     restoreLead,
-  };
-  const { leads: actions } = useResourceActions(openModal, filters, {
+  }), [fetchMyLeads, deleteLead, handleBulkAction, restoreLead]);
+
+  const storesParam = useMemo(() => ({
     leadStore: storeActions,
     userRole,
-  });
+  }), [storeActions, userRole]);
 
-  // CÁLCULO DO NOME PARA O CABEÇALHO (Necessário antes do useEffect)
+  const { leads: actions } = useResourceActions(openModal, filters, storesParam);
+
   const selectedUser = users.find(
     (u) => String(u.id) === String(filters.userId),
   );
@@ -77,45 +82,59 @@ const LeadsKanban = () => {
       : intl.formatMessage({ id: "leads.admin_general" })
     : currentUserName;
 
-  // 4. CARREGAMENTO DE DADOS (Utilizadores para Admin)
   useEffect(() => {
     if (isAdmin) {
-      userService.getAllUsers().then(setUsers).catch(console.error);
+      userService.getAllUsers("", 1, 100).then(res => setUsers(res.items || [])).catch(console.error);
     }
   }, [isAdmin]);
 
   /**
-   * 5. EFEITO DE SINCRONIZAÇÃO:
-   * Completamente isolado e limpo. Só dispara quando um filtro muda.
+   * Synchronize lead data based on filter, search, or pagination changes.
+   * Utilizes debounce to minimize backend request frequency.
    */
   useEffect(() => {
-    fetchMyLeads(userRole, {
-      userId: filters.userId,
-      softDeleted: isTrashMode,
-    });
+    // Debounce para otimizar os pedidos ao backend
+    const delay = setTimeout(() => {
+        fetchMyLeads(userRole, {
+            userId: filters.userId,
+            softDeleted: isTrashMode,
+            search: searchTerm,
+            page: 1, // Sempre página 1 quando os filtros mudam
+            size: 10 
+        });
+    }, 300);
 
+    return () => clearTimeout(delay);
+  }, [userRole, filters.userId, isTrashMode, searchTerm, fetchMyLeads]);
+
+  // Update global header configuration
+  useEffect(() => {
     const subtitleKey = isAdmin ? "leads.subtitle_admin" : "leads.subtitle_user";
 
-    // ATUALIZA O CABEÇALHO GLOBAL
     setHeader({
       title: intl.formatMessage({ id: isTrashMode ? "leads.trash_title" : "leads.title" }),
       subtitle: intl.formatMessage(
           { id: subtitleKey },
-          { count: leads.length, responsible: displayName }
+          { count: totalItems, responsible: displayName }
       ),
       isTrash: isTrashMode,
       showStats: false,
+      actions: actions, // Re-adicionado: Permite mostrar o botão "Novo" e outras ações
     });
-  }, [
-    userRole,
-    filters.userId,
-    isTrashMode,
-    leads.length,
-    displayName,
-    setHeader,
-  ]);
+  }, [isTrashMode, totalItems, displayName, setHeader, intl, isAdmin, actions]);
 
-  // FEEDBACK DE LOADING
+  const handleSearchChange = (val) => {
+    setSearchTerm(val);
+    // Ao pesquisar, forçamos a volta para a página 1
+    fetchMyLeads(userRole, {
+        userId: filters.userId,
+        softDeleted: isTrashMode,
+        search: val,
+        page: 1
+    });
+  };
+
+  // Feedback visual enquanto os dados iniciais estão a ser carregados
   if (loading && leads.length === 0) {
     return (
       <div className="text-center mt-5">
@@ -129,12 +148,14 @@ const LeadsKanban = () => {
     <Container fluid className="mt-4 px-4">
       <KanbanHeader
         displayName={displayName}
-        leadsCount={leads.length}
+        leadsCount={totalItems}
         isTrashMode={isTrashMode}
         setIsTrashMode={setIsTrashMode}
         isAdmin={isAdmin}
         filters={filters}
-        setFilters={setFilters}
+        setFilters={(f) => { setFilters(f); fetchMyLeads(userRole, {...f, softDeleted: isTrashMode, page: 1}); }}
+        searchTerm={searchTerm}
+        onSearchChange={handleSearchChange}
         users={users}
         actions={actions}
       />
@@ -160,6 +181,24 @@ const LeadsKanban = () => {
         ))}
       </div>
 
+      {currentPage < totalPages && (
+          <div className="d-flex justify-content-center mt-2 mb-5">
+              <Button 
+                variant="primary" 
+                className="shadow-sm px-5 py-2 fw-bold"
+                style={{ borderRadius: "25px", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", border: "none" }}
+                onClick={() => loadMoreLeads(userRole, { 
+                    userId: filters.userId, 
+                    softDeleted: isTrashMode, 
+                    search: searchTerm 
+                })}
+                disabled={loading}
+              >
+                  {loading ? intl.formatMessage({ id: "common.loading" }) : "VER MAIS LEADS"}
+              </Button>
+          </div>
+      )}
+
       <DynamicModal
         show={modalConfig.show}
         onHide={closeModal}
@@ -169,7 +208,7 @@ const LeadsKanban = () => {
           <EditLeadForm
             leadData={modalConfig.data}
             onSuccess={() => {
-              // A store já atualizou a lead localmente, não fazemos fetch redundante
+              // Fechar o modal após sucesso (o estado local é gerido pela store)
               closeModal();
             }}
             onCancel={closeModal}
@@ -180,7 +219,7 @@ const LeadsKanban = () => {
             data={modalConfig.data}
             onCancel={closeModal}
             onConfirm={async (data) => {
-              // As chamadas agora usam as funções atómicas diretamente
+              // Mapeamento de ações de confirmação para operações na store
               const actionMap = {
                 SOFT_DELETE: () => deleteLead(data.id, userRole, false),
                 HARD_DELETE: () => deleteLead(data.id, userRole, true),

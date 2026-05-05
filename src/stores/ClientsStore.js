@@ -3,24 +3,22 @@ import { clientsService } from "../services/clientsService";
 
 /**
  * STORE: useClientStore (Zustand)
- * ------------------------------
- * DESCRIÇÃO: Gere o estado global dos clientes em toda a aplicação.
- * FUNCIONALIDADE: Centraliza dados, estados de carregamento (loading) e erros,
- * permitindo que as atualizações na base de dados sejam refletidas na UI instantaneamente.
+ * Gere o estado global da carteira de clientes, incluindo paginação e metadados.
  */
 export const useClientStore = create((set, get) => ({
   clients: [],
+  currentPage: 1,
+  totalPages: 1,
+  totalItems: 0,
   loading: false,
   error: null,
 
   // PERSISTÊNCIA DE CONTEXTO :
-  // Guardamos o role e os filtros atuais para permitir 'refetch' automáticos
-  // após ações de CRUD, mantendo a lista sempre atualizada com os critérios certos.
   _currentUserRole: null,
   _currentFilters: {},
 
-  /** * ACÇÃO: fetchClients
-   * Procura os clientes no Backend Java baseando-se no Role e Filtros.
+  /**
+   * Procura clientes na API aplicando filtros, pesquisa e paginação.
    */
   fetchClients: async (userRole, filters = {}) => {
     set({
@@ -32,17 +30,29 @@ export const useClientStore = create((set, get) => ({
     try {
       const apiFilters = {
         userId: filters.userId || null,
-        showTrash: !!filters.showTrash, // Converte para booleano explícito
+        showTrash: !!filters.showTrash,
+        search: filters.search || "",
+        page: filters.page || 1,
+        size: filters.size || 10,
       };
-      const data = await clientsService.getClients(userRole, apiFilters);
-      set({ clients: data, loading: false });
+
+      const response = await clientsService.getClients(userRole, apiFilters);
+
+      // Sincroniza o estado com a resposta paginada do backend
+      set({
+        clients: response.items || [],
+        totalPages: response.totalPages || 1,
+        totalItems: response.totalItems || 0,
+        currentPage: response.currentPage || 1,
+        loading: false,
+      });
     } catch (err) {
       set({ error: err.message, loading: false });
     }
   },
 
-  /** * MÉTODO INTERNO: _refetch
-   * Atalho para atualizar a lista usando os últimos filtros guardados.
+  /**
+   * Recarrega a lista de clientes mantendo os filtros e contexto atuais.
    */
   _refetch: async () => {
     const { _currentUserRole, _currentFilters, fetchClients } = get();
@@ -56,14 +66,17 @@ export const useClientStore = create((set, get) => ({
     try {
       let newClient;
       if (targetUserId) {
-        newClient = await clientsService.createClientForUser(targetUserId, clientData);
+        newClient = await clientsService.createClientForUser(
+          targetUserId,
+          clientData,
+        );
       } else {
         newClient = await clientsService.createClient(clientData);
       }
-      
+
       set((state) => ({
         clients: [newClient, ...state.clients],
-        loading: false
+        loading: false,
       }));
       return true;
     } catch (err) {
@@ -76,10 +89,10 @@ export const useClientStore = create((set, get) => ({
     set({ loading: true });
     try {
       const updatedClient = await clientsService.updateClient(id, clientDto);
-      
+
       set((state) => ({
         clients: state.clients.map((c) => (c.id === id ? updatedClient : c)),
-        loading: false
+        loading: false,
       }));
       return true;
     } catch (err) {
@@ -98,10 +111,10 @@ export const useClientStore = create((set, get) => ({
       } else {
         await clientsService.softDeleteClient(id);
       }
-      
+
       set((state) => ({
         clients: state.clients.filter((c) => c.id !== id),
-        loading: false
+        loading: false,
       }));
       return true;
     } catch (err) {
@@ -114,10 +127,10 @@ export const useClientStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       await clientsService.restoreClient(id);
-      
+
       set((state) => ({
         clients: state.clients.filter((c) => c.id !== id),
-        loading: false
+        loading: false,
       }));
       return true;
     } catch (error) {
@@ -127,10 +140,10 @@ export const useClientStore = create((set, get) => ({
   },
 
   handleBulkAction: async (
-      userId,
-      actionType,
-      currentUserRole,
-      currentFilters,
+    userId,
+    actionType,
+    currentUserRole,
+    currentFilters,
   ) => {
     if (!userId) return false;
     set({ loading: true });
